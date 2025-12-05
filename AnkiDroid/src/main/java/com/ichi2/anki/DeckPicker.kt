@@ -432,7 +432,7 @@ open class DeckPicker :
     var createMenuJob: Job? = null
 
     init {
-        ChangeManager.subscribe(this)
+        ChangeManager.subscribe(this, this)
     }
 
     // ----------------------------------------------------------------------------
