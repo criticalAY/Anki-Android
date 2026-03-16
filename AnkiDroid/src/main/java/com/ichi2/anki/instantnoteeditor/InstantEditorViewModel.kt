@@ -56,10 +56,8 @@ class InstantEditorViewModel :
     /** Errors or Warnings related to the edit fields that might occur when trying to save note */
     val instantEditorError = MutableSharedFlow<String?>()
 
-    private val _currentClozeNumber = MutableStateFlow(1)
-
-    val currentClozeNumber: Int
-        get() = _currentClozeNumber.value
+    val currentClozeNumber: StateFlow<Int>
+        field = MutableStateFlow(1)
 
     // List to store the cloze integers
     private val intClozeList = mutableListOf<Int>()
@@ -68,17 +66,14 @@ class InstantEditorViewModel :
     @VisibleForTesting
     val clozeDeletionCount get() = intClozeList.size
 
-    private val _currentClozeMode = MutableStateFlow(InstantNoteEditorActivity.ClozeMode.INCREMENT)
+    val currentClozeMode: StateFlow<InstantNoteEditorActivity.ClozeMode>
+        field = MutableStateFlow(InstantNoteEditorActivity.ClozeMode.INCREMENT)
 
-    val currentClozeMode: StateFlow<InstantNoteEditorActivity.ClozeMode> = _currentClozeMode.asStateFlow()
+    val actualClozeFieldText: StateFlow<String?>
+        field = MutableStateFlow<String?>(null)
 
-    private val _actualClozeFieldText = MutableStateFlow<String?>(null)
-
-    val actualClozeFieldText: StateFlow<String?> = _actualClozeFieldText.asStateFlow()
-
-    private val _editorMode = MutableStateFlow(InstantNoteEditorActivity.EditMode.SINGLE_TAP)
-
-    val editorMode: StateFlow<InstantNoteEditorActivity.EditMode> = _editorMode.asStateFlow()
+    val editorMode: StateFlow<InstantNoteEditorActivity.EditMode>
+        field = MutableStateFlow(InstantNoteEditorActivity.EditMode.SINGLE_TAP)
 
     /**
      * Gets the current editor note.
@@ -86,22 +81,20 @@ class InstantEditorViewModel :
     @VisibleForTesting
     lateinit var editorNote: Note
 
-    private val _currentlySelectedNotetype = MutableLiveData<NotetypeJson>()
-
     /**
      * Representing the currently selected note type.
      *
      * @see NotetypeJson
      */
-    val currentlySelectedNotetype: LiveData<NotetypeJson> get() = _currentlySelectedNotetype
+    val currentlySelectedNotetype: LiveData<NotetypeJson>
+        field = MutableLiveData<NotetypeJson>()
 
     var deckId: DeckId? = null
 
-    private val _dialogType = MutableStateFlow<DialogType?>(null)
-
     /** Representing the type of dialog to be displayed.
      * @see DialogType*/
-    val dialogType: StateFlow<DialogType?> get() = _dialogType
+    val dialogType: StateFlow<DialogType?>
+        field = MutableStateFlow<DialogType?>(null)
 
     init {
         viewModelScope.launch {
@@ -113,18 +106,18 @@ class InstantEditorViewModel :
             // TODO: Use did here
             val noteType = withCol { notetypes.all().firstOrNull { it.isCloze } }
             if (noteType == null) {
-                _dialogType.emit(DialogType.NO_CLOZE_NOTE_TYPES_DIALOG)
+                dialogType.value = DialogType.NO_CLOZE_NOTE_TYPES_DIALOG
                 return@launch
             }
 
             @Suppress("RedundantRequireNotNullCall") // postValue lint requires this
             val clozeNoteType = requireNotNull(noteType) { "noteType" }
             Timber.d("Changing to cloze type note")
-            _currentlySelectedNotetype.postValue(clozeNoteType)
+            currentlySelectedNotetype.postValue(clozeNoteType)
             Timber.i("Using note type '%d", clozeNoteType.id)
             editorNote = withCol { Note.fromNotetypeId(this@withCol, clozeNoteType.id) }
 
-            _dialogType.emit(DialogType.SHOW_EDITOR_DIALOG)
+            dialogType.value = DialogType.SHOW_EDITOR_DIALOG
         }
     }
 
@@ -172,13 +165,13 @@ class InstantEditorViewModel :
     private fun shouldResetClozeNumber(number: Int) {
         intClozeList.remove(number)
 
-        _currentClozeNumber.value =
+        currentClozeNumber.value =
             when {
                 // Reset cloze number if the list is empty
                 intClozeList.isEmpty() -> 1
                 currentClozeMode.value == InstantNoteEditorActivity.ClozeMode.INCREMENT ->
                     (intClozeList.maxOrNull() ?: 0) + 1
-                else -> _currentClozeNumber.value
+                else -> currentClozeNumber.value
             }
     }
 
@@ -215,13 +208,13 @@ class InstantEditorViewModel :
 
     private fun incrementClozeNumber() {
         Timber.d("Incrementing cloze number: $currentClozeNumber")
-        _currentClozeNumber.value++
+        currentClozeNumber.value++
     }
 
     fun setClozeFieldText(text: String?) {
-        _actualClozeFieldText.value = text
+        actualClozeFieldText.value = text
         intClozeList.replaceWith(getClozeOrdinals(text ?: ""))
-        _currentClozeNumber.value = (intClozeList.maxOrNull() ?: 0) + 1
+        currentClozeNumber.value = (intClozeList.maxOrNull() ?: 0) + 1
     }
 
     /**
@@ -249,7 +242,7 @@ class InstantEditorViewModel :
 
         val clozeText: String?
 
-        val clozeNumber = currentClozeNumber
+        val clozeNumber = currentClozeNumber.value
         if (currentClozeMode.value == InstantNoteEditorActivity.ClozeMode.INCREMENT) {
             incrementClozeNumber()
         }
@@ -364,7 +357,7 @@ class InstantEditorViewModel :
     private fun processClozeUndo(text: String): String? {
         val matchResult = clozePattern.find(text)
         val capturedClozeNumber = matchResult?.groups?.get(2)?.value
-        if (capturedClozeNumber != null && currentClozeNumber - capturedClozeNumber.toInt() == 1) {
+        if (capturedClozeNumber != null && currentClozeNumber.value - capturedClozeNumber.toInt() == 1) {
             decrementClozeNumber()
         }
 
@@ -386,17 +379,17 @@ class InstantEditorViewModel :
     }
 
     fun setEditorMode(mode: InstantNoteEditorActivity.EditMode) {
-        _editorMode.value = mode
+        editorMode.value = mode
     }
 
     private fun decrementClozeNumber() {
-        val newValue = _currentClozeNumber.value - 1
-        _currentClozeNumber.value = max(1, newValue)
+        val newValue = currentClozeNumber.value - 1
+        currentClozeNumber.value = max(1, newValue)
     }
 
     fun toggleClozeMode() {
         val newMode =
-            when (_currentClozeMode.value) {
+            when (currentClozeMode.value) {
                 InstantNoteEditorActivity.ClozeMode.INCREMENT -> {
                     decrementClozeNumber()
                     InstantNoteEditorActivity.ClozeMode.NO_INCREMENT
@@ -406,7 +399,7 @@ class InstantEditorViewModel :
                     InstantNoteEditorActivity.ClozeMode.INCREMENT
                 }
             }
-        _currentClozeMode.value = newMode
+        currentClozeMode.value = newMode
     }
 }
 

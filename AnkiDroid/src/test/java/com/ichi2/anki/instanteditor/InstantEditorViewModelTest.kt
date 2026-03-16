@@ -69,7 +69,7 @@ class InstantEditorViewModelTest : RobolectricTest() {
             toggleAllClozeDeletions(sentenceArray)
 
             assertEquals("all cloze deletions are removed", clozeDeletionCount, 0)
-            assertEquals("cloze number is reset if there are no clozes", currentClozeNumber, 1)
+            assertEquals("cloze number is reset if there are no clozes", currentClozeNumber.value, 1)
         }
 
     @Test
@@ -83,11 +83,11 @@ class InstantEditorViewModelTest : RobolectricTest() {
             // disable cloze on the first 2, leaving "this" as {{c3::
             toggleClozeDeletions(sentenceArray, 0, 1)
 
-            assertEquals("cloze number is 'Current Cloze Number + 1'", currentClozeNumber, 4)
+            assertEquals("cloze number is 'Current Cloze Number + 1'", currentClozeNumber.value, 4)
 
             // remove the remaining cloze all clozes
             toggleClozeDeletion(sentenceArray, 2)
-            assertEquals("cloze number is reset if all clozes are removed", currentClozeNumber, 1)
+            assertEquals("cloze number is reset if all clozes are removed", currentClozeNumber.value, 1)
         }
 
     @Test
@@ -265,13 +265,13 @@ class InstantEditorViewModelTest : RobolectricTest() {
             val text = "This is {{c1::first}} and {{c2::second}}"
             setClozeFieldText(text)
 
-            assertEquals(3, currentClozeNumber)
+            assertEquals(3, currentClozeNumber.value)
 
             toggleClozeMode() // switch to NO_INCREMENT mode
-            assertEquals(2, currentClozeNumber)
+            assertEquals(2, currentClozeNumber.value)
 
             toggleClozeMode() // switch back to INCREMENT mode
-            assertEquals(3, currentClozeNumber)
+            assertEquals(3, currentClozeNumber.value)
         }
 
     private fun runViewModelTest(

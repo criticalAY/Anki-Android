@@ -574,7 +574,7 @@ class InstantNoteEditorActivity :
                     convertSelectedTextToCloze(
                         textBox,
                         selectedText,
-                        viewModel.currentClozeNumber,
+                        viewModel.currentClozeNumber.value,
                     )
 
                     mode.finish()
