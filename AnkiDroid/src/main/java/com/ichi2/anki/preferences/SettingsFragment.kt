@@ -27,7 +27,8 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceManager.OnPreferenceTreeClickListener
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.analytics.AnalyticsConstants
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.databinding.FragmentSettingsBinding
 import com.ichi2.preferences.DialogFragmentProvider
 import timber.log.Timber
@@ -47,9 +48,9 @@ abstract class SettingsFragment :
     abstract fun initSubscreen()
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
-        UsageAnalytics.sendAnalyticsEvent(
-            category = UsageAnalytics.Category.SETTING,
-            action = UsageAnalytics.Actions.TAPPED_SETTING,
+        AnkiDroidUsageAnalytics.sendAnalyticsEvent(
+            category = AnalyticsConstants.Category.SETTING,
+            action = AnalyticsConstants.Actions.TAPPED_SETTING,
             label = preference.key,
         )
         return super.onPreferenceTreeClick(preference)
@@ -59,14 +60,14 @@ abstract class SettingsFragment :
         sharedPreferences: SharedPreferences,
         key: String?,
     ) {
-        if (key !in UsageAnalytics.preferencesWhoseChangesShouldBeReported) {
+        if (key !in AnkiDroidUsageAnalytics.preferencesWhoseChangesShouldBeReported) {
             return
         }
         if (key != null) {
             val valueToReport = getPreferenceReportableValue(sharedPreferences.get(key))
-            UsageAnalytics.sendAnalyticsEvent(
-                category = UsageAnalytics.Category.SETTING,
-                action = UsageAnalytics.Actions.CHANGED_SETTING,
+            AnkiDroidUsageAnalytics.sendAnalyticsEvent(
+                category = AnalyticsConstants.Category.SETTING,
+                action = AnalyticsConstants.Actions.CHANGED_SETTING,
                 value = valueToReport,
                 label = key,
             )
@@ -101,7 +102,7 @@ abstract class SettingsFragment :
         savedInstanceState: Bundle?,
         rootKey: String?,
     ) {
-        UsageAnalytics.sendAnalyticsScreenView(analyticsScreenNameConstant)
+        AnkiDroidUsageAnalytics.sendAnalyticsScreenView(analyticsScreenNameConstant)
         addPreferencesFromResource(preferenceResource)
         initSubscreen()
     }
@@ -142,7 +143,7 @@ abstract class SettingsFragment :
         /**
          * Converts a preference value to a numeric number that
          * can be reported to analytics, since analytics events only accept
-         * [Int] as value ([UsageAnalytics.sendAnalyticsEvent]),
+         * [Int] as value ([AnkiDroidUsageAnalytics.sendAnalyticsEvent]),
          * or null if it can't be converted.
          *
          * Boolean preferences will return 1 if true and 0 if false
@@ -158,7 +159,7 @@ abstract class SettingsFragment :
                 is String ->
                     try {
                         value.toInt()
-                    } catch (e: NumberFormatException) {
+                    } catch (_: NumberFormatException) {
                         null
                     }
                 is Boolean -> if (value) 1 else 0

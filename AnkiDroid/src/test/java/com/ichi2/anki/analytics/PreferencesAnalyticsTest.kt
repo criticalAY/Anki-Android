@@ -39,7 +39,7 @@ class PreferencesAnalyticsTest : RobolectricTest() {
             .getAllPreferenceKeys(targetContext)
             .subtract(developerOptionsKeys)
 
-    private val reportableKeys = UsageAnalytics.reportablePrefKeys.toStringResourceSet()
+    private val reportableKeys = AnalyticsConstants.reportablePrefKeys.toStringResourceSet()
 
     /** Keys of preferences that shouldn't be reported */
     private val excludedPrefs: Set<String> =

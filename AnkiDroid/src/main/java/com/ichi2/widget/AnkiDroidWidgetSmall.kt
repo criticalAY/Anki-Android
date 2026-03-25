@@ -35,7 +35,7 @@ import androidx.core.content.edit
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.compat.CompatHelper.Companion.registerReceiverCompat
 import timber.log.Timber
@@ -52,7 +52,7 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: AppWidgetIds,
-        usageAnalytics: UsageAnalytics,
+        ankiDroidUsageAnalytics: AnkiDroidUsageAnalytics,
     ) {
         WidgetStatus.updateInBackground(context)
     }

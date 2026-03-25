@@ -26,7 +26,7 @@ import com.ichi2.anki.CollectionHelper
 import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.dialogs.TtsVoicesDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.settings.Prefs
@@ -67,12 +67,12 @@ class DeveloperOptionsFragment : SettingsFragment() {
         }
         // Make it possible to test analytics
         requirePreference<Preference>(R.string.pref_analytics_debug_key).setOnPreferenceClickListener {
-            if (UsageAnalytics.isEnabled) {
+            if (AnkiDroidUsageAnalytics.isEnabled) {
                 showSnackbar("Analytics set to dev mode")
             } else {
                 showSnackbar("Done! Enable Analytics in 'General' settings to use.")
             }
-            UsageAnalytics.setDevMode()
+            AnkiDroidUsageAnalytics.setDevMode(AnkiDroidApp.instance.applicationContext)
             false
         }
         // Lock database

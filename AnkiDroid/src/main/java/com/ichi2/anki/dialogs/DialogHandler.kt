@@ -26,7 +26,7 @@ import com.ichi2.anki.DeckPicker
 import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.OneWaySyncDialog
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.dialogs.DialogHandler.Companion.storeMessage
 import com.ichi2.anki.showError
 import com.ichi2.utils.HandlerUtils.getDefaultLooper
@@ -47,7 +47,7 @@ class DialogHandler(
 
     override fun handleMessage(message: Message) {
         val msg = DialogHandlerMessage.fromMessage(message)
-        UsageAnalytics.sendAnalyticsScreenView(msg.analyticName)
+        AnkiDroidUsageAnalytics.sendAnalyticsScreenView(msg.analyticName)
         Timber.i("Handling Message: %s", msg.analyticName)
         msg.handleAsyncMessage(activity.get() as AnkiActivity)
     }

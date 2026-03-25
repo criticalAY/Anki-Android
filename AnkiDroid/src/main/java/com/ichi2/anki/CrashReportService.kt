@@ -24,8 +24,8 @@ import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
 import com.ichi2.anki.analytics.AnkiDroidCrashReportDialog
-import com.ichi2.anki.analytics.UsageAnalytics
-import com.ichi2.anki.analytics.UsageAnalytics.sendAnalyticsException
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics.sendAnalyticsException
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.exception.ManuallyReportedException
 import com.ichi2.anki.exception.UserSubmittedException
@@ -330,7 +330,7 @@ object CrashReportService {
         // If the user changed error reporting, make sure future reports have a chance to post
         deleteACRALimiterData(ctx)
         // We also need to re-chain our UncaughtExceptionHandlers
-        UsageAnalytics.reInitialize()
+        AnkiDroidUsageAnalytics.reinitialize(ctx.applicationContext)
         ThrowableFilterService.reInitialize()
     }
 

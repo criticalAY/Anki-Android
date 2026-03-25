@@ -29,7 +29,8 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
 import com.ichi2.anki.AnkiActivity
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.analytics.AnalyticsConstants
+import com.ichi2.anki.analytics.AnkiDroidUsageAnalytics
 import com.ichi2.anki.common.annotations.NeedsTest
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.snackbar.showSnackbar
@@ -51,8 +52,8 @@ class ImportFileSelectionFragment : DialogFragment() {
                 entries.map { requireActivity().getString(it.titleRes) }.toTypedArray(),
             ) { _, position ->
                 val entry = entries[position]
-                UsageAnalytics.sendAnalyticsEvent(
-                    UsageAnalytics.Category.LINK_CLICKED,
+                AnkiDroidUsageAnalytics.sendAnalyticsEvent(
+                    AnalyticsConstants.Category.LINK_CLICKED,
                     entry.analyticsId,
                 )
                 openImportFilePicker(
@@ -76,7 +77,7 @@ class ImportFileSelectionFragment : DialogFragment() {
                     add(
                         ImportEntry(
                             R.string.import_deck_package,
-                            UsageAnalytics.Actions.IMPORT_APKG_FILE,
+                            AnalyticsConstants.Actions.IMPORT_APKG_FILE,
                             ImportFileType.APKG,
                         ),
                     )
@@ -85,7 +86,7 @@ class ImportFileSelectionFragment : DialogFragment() {
                     add(
                         ImportEntry(
                             R.string.import_collection_package,
-                            UsageAnalytics.Actions.IMPORT_COLPKG_FILE,
+                            AnalyticsConstants.Actions.IMPORT_COLPKG_FILE,
                             ImportFileType.COLPKG,
                         ),
                     )
@@ -94,7 +95,7 @@ class ImportFileSelectionFragment : DialogFragment() {
                     add(
                         ImportEntry(
                             R.string.import_csv,
-                            UsageAnalytics.Actions.IMPORT_CSV_FILE,
+                            AnalyticsConstants.Actions.IMPORT_CSV_FILE,
                             ImportFileType.CSV,
                             multiple = false,
                             mimeType = "*/*",
