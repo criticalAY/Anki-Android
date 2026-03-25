@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 // TODO: write test for this class
 object AnkiDroidUsageAnalytics {
-    const val ANALYTICS_OPTIN_KEY = "analytics_opt_in"
+    const val ANALYTICS_OPTIN_KEY = "analytics_opt_in_key"
     private const val ANALYTICS_CLIENT_ID = "googleAnalyticsClientId"
     private const val ANALYTICS_PREFS = "analyticsPrefs"
 
