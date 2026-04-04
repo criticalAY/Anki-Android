@@ -105,12 +105,21 @@ class ProfileManager private constructor(
     }
 
     /**
+     * Returns all registered profiles and their metadata.
+     *
+     * @return A map of every [ProfileId] to its corresponding
+     *   [ProfileMetadata], including the default profile.
+     * @see ProfileRegistry.getAllProfiles
+     */
+    fun getAllProfiles(): Map<ProfileId, ProfileMetadata> = profileRegistry.getAllProfiles()
+
+    /**
      * Generates a unique [ProfileId] that does not collide with existing profiles.
      *
      * @return A unique [ProfileId] not present in the [profileRegistry].
      *
      * @throws IllegalStateException if a unique ID cannot be generated after
-     * [maxAttempts] attempts.
+     * [MAX_ATTEMPTS] attempts.
      */
     private fun generateUniqueProfileId(): ProfileId {
         var newId: ProfileId
@@ -286,6 +295,36 @@ class ProfileManager private constructor(
                 Timber.w(e, "Failed to parse profile metadata for ${id.value}")
                 null
             }
+        }
+
+        /**
+         * Retrieves all registered profiles from the global SharedPreferences.
+         *
+         * Iterates over all stored entries, skipping the
+         * [KEY_LAST_ACTIVE_PROFILE_ID] metadata key, and deserializes each
+         * value into a [ProfileMetadata] instance. Entries that fail to parse
+         * are logged and silently skipped.
+         *
+         * @return A map of [ProfileId] to [ProfileMetadata] for every
+         *   successfully parsed profile in the registry.
+         */
+        fun getAllProfiles(): Map<ProfileId, ProfileMetadata> {
+            val result = mutableMapOf<ProfileId, ProfileMetadata>()
+            val allEntries = globalPrefs.all
+            for ((key, value) in allEntries) {
+                // Skip internal bookkeeping keys; only profile entries remain
+                if (key == KEY_LAST_ACTIVE_PROFILE_ID) continue
+
+                val metadata =
+                    try {
+                        ProfileMetadata.fromJson(value as String)
+                    } catch (e: Exception) {
+                        Timber.w(e, "Skipping corrupt profile entry: $key")
+                        continue
+                    }
+                result[ProfileId(key)] = metadata
+            }
+            return result
         }
 
         fun contains(id: ProfileId): Boolean = globalPrefs.contains(id.value)

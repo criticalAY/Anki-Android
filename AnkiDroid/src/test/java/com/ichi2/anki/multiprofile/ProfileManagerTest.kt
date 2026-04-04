@@ -172,4 +172,32 @@ class ProfileManagerTest {
 
         assertEquals("Serialization round-trip failed!", original, reconstructed)
     }
+
+    @Test
+    fun `getAllProfiles returns all registered profiles`() {
+        val manager = ProfileManager.create(context)
+
+        val profile1 = manager.createNewProfile("Work")
+        val profile2 = manager.createNewProfile("Personal")
+
+        val allProfiles = manager.getAllProfiles()
+
+        assertEquals(3, allProfiles.size)
+        assertTrue(allProfiles.containsKey(ProfileId.DEFAULT))
+        assertTrue(allProfiles.containsKey(profile1))
+        assertTrue(allProfiles.containsKey(profile2))
+        assertEquals("Default", allProfiles[ProfileId.DEFAULT]?.displayName)
+        assertEquals("Work", allProfiles[profile1]?.displayName)
+        assertEquals("Personal", allProfiles[profile2]?.displayName)
+    }
+
+    @Test
+    fun `getAllProfiles returns only default when no profiles created`() {
+        ProfileManager.create(context)
+
+        val allProfiles = ProfileManager.create(context).getAllProfiles()
+
+        assertEquals(1, allProfiles.size)
+        assertTrue(allProfiles.containsKey(ProfileId.DEFAULT))
+    }
 }
