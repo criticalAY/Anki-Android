@@ -18,13 +18,16 @@
 package com.ichi2.anki.multiprofile
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.WebView
+import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.ichi2.anki.CrashReportService
+import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.time.getTimestamp
 import org.acra.ACRA
@@ -148,11 +151,16 @@ class ProfileManager private constructor(
         return newId
     }
 
+    /**
+     * Persists [newProfileId] as the active profile.
+     *
+     * @param newProfileId The [ProfileId] to activate on next launch.
+     */
+    @VisibleForTesting
+    context(_: ProfileSwitchContext)
     fun switchActiveProfile(newProfileId: ProfileId) {
         Timber.i("Switching profile to ID: $newProfileId")
-
         profileRegistry.setLastActiveProfileId(newProfileId)
-        triggerAppRestart()
     }
 
     private fun loadProfileData(profileId: ProfileId) {
@@ -222,11 +230,6 @@ class ProfileManager private constructor(
             }
 
         return ProfileRestrictedDirectory(directoryFile)
-    }
-
-    private fun triggerAppRestart() {
-        Timber.w("Restarting app to apply profile switch")
-        // TODO: Implement process restart logic (e.g. ProcessPhoenix)
     }
 
     /**
@@ -329,6 +332,17 @@ class ProfileManager private constructor(
 
         fun contains(id: ProfileId): Boolean = globalPrefs.contains(id.value)
     }
+
+    /**
+     * A context representing that it is safe to switch profiles
+     *
+     * - Backups are not occurring
+     * - Sync is completed
+     * - Collection is not open
+     *
+     * @see ProfileSwitchGuard
+     */
+    object ProfileSwitchContext
 
     companion object {
         private const val MAX_ATTEMPTS = 10
