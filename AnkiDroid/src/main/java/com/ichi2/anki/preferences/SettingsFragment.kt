@@ -30,6 +30,7 @@ import androidx.preference.PreferenceManager.OnPreferenceTreeClickListener
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.databinding.FragmentSettingsBinding
 import com.ichi2.preferences.DialogFragmentProvider
+import dev.androidbroadcast.vbpd.viewBinding
 import timber.log.Timber
 
 abstract class SettingsFragment :
@@ -42,7 +43,7 @@ abstract class SettingsFragment :
     @get:XmlRes
     abstract override val preferenceResource: Int
 
-    protected lateinit var binding: FragmentSettingsBinding
+    protected val binding by viewBinding(FragmentSettingsBinding::bind)
 
     abstract fun initSubscreen()
 
@@ -81,7 +82,6 @@ abstract class SettingsFragment :
         FragmentSettingsBinding
             .inflate(inflater, container, false)
             .apply {
-                binding = this
                 listContainer.addView(super.onCreateView(inflater, container, savedInstanceState))
             }.root
 
