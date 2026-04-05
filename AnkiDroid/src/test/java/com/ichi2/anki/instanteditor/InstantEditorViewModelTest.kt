@@ -274,6 +274,47 @@ class InstantEditorViewModelTest : RobolectricTest() {
             assertEquals(3, currentClozeNumber.value)
         }
 
+    @Test
+    fun `setClozeFieldText does not increment in NO_INCREMENT mode`() =
+        runViewModelTest {
+            toggleClozeMode() // switch to NO_INCREMENT mode
+
+            val text = "{{c1::first}} {{c2::second}}"
+            setClozeFieldText(text)
+
+            assertEquals(2, currentClozeNumber.value)
+        }
+
+    @Test
+    fun `setClozeFieldText increments in INCREMENT mode`() =
+        runViewModelTest {
+            val text = "{{c1::first}} {{c2::second}}"
+            setClozeFieldText(text)
+
+            assertEquals(3, currentClozeNumber.value)
+        }
+
+    @Test
+    fun `toggling cloze mode with no clozes keeps cloze number at 1`() =
+        runViewModelTest {
+            assertEquals(1, currentClozeNumber.value)
+
+            toggleClozeMode() // INCREMENT -> NO_INCREMENT
+            assertEquals(1, currentClozeNumber.value)
+
+            toggleClozeMode() // NO_INCREMENT -> INCREMENT
+            assertEquals(1, currentClozeNumber.value)
+        }
+
+    @Test
+    fun `toggling cloze mode multiple times with no clozes keeps cloze number at 1`() =
+        runViewModelTest {
+            repeat(5) {
+                toggleClozeMode()
+            }
+            assertEquals(1, currentClozeNumber.value)
+        }
+
     private fun runViewModelTest(
         initViewModel: () -> InstantEditorViewModel = { InstantEditorViewModel() },
         testBody: suspend InstantEditorViewModel.() -> Unit,

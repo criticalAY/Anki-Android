@@ -214,7 +214,11 @@ class InstantEditorViewModel :
     fun setClozeFieldText(text: String?) {
         actualClozeFieldText.value = text
         intClozeList.replaceWith(getClozeOrdinals(text ?: ""))
-        currentClozeNumber.value = (intClozeList.maxOrNull() ?: 0) + 1
+        currentClozeNumber.value =
+            when (currentClozeMode.value) {
+                InstantNoteEditorActivity.ClozeMode.INCREMENT -> (intClozeList.maxOrNull() ?: 0) + 1
+                InstantNoteEditorActivity.ClozeMode.NO_INCREMENT -> intClozeList.maxOrNull() ?: 1
+            }
     }
 
     /**
@@ -391,11 +395,15 @@ class InstantEditorViewModel :
         val newMode =
             when (currentClozeMode.value) {
                 InstantNoteEditorActivity.ClozeMode.INCREMENT -> {
-                    decrementClozeNumber()
+                    if (intClozeList.isNotEmpty()) {
+                        decrementClozeNumber()
+                    }
                     InstantNoteEditorActivity.ClozeMode.NO_INCREMENT
                 }
                 InstantNoteEditorActivity.ClozeMode.NO_INCREMENT -> {
-                    incrementClozeNumber()
+                    if (intClozeList.isNotEmpty()) {
+                        incrementClozeNumber()
+                    }
                     InstantNoteEditorActivity.ClozeMode.INCREMENT
                 }
             }
