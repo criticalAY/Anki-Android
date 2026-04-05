@@ -39,6 +39,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import java.io.File
@@ -199,5 +200,66 @@ class ProfileManagerTest {
 
         assertEquals(1, allProfiles.size)
         assertTrue(allProfiles.containsKey(ProfileId.DEFAULT))
+    }
+
+    fun `renameProfile updates displayName in registry`() {
+        val manager = ProfileManager.create(context)
+        val profileId = manager.createNewProfile("Original Name")
+        val newName = "Updated Name"
+
+        manager.renameProfile(profileId, newName)
+
+        val json = prefs.getString(profileId.value, null)
+        val metadata = ProfileManager.ProfileMetadata.fromJson(json!!)
+
+        assertEquals(newName, metadata.displayName)
+    }
+
+    @Test
+    fun `renameProfile preserves version and createdTimestamp`() {
+        val manager = ProfileManager.create(context)
+        val profileId = manager.createNewProfile("Original Name")
+
+        val originalJson = prefs.getString(profileId.value, null)
+        val originalMetadata = ProfileManager.ProfileMetadata.fromJson(originalJson!!)
+
+        manager.renameProfile(profileId, "New Name")
+
+        val updatedJson = prefs.getString(profileId.value, null)
+        val updatedMetadata = ProfileManager.ProfileMetadata.fromJson(updatedJson!!)
+
+        assertEquals("Version must be preserved", originalMetadata.version, updatedMetadata.version)
+        assertEquals(
+            "Timestamp must be preserved",
+            originalMetadata.createdTimestamp,
+            updatedMetadata.createdTimestamp,
+        )
+    }
+
+    @Test
+    fun `renameProfile does not write to disk if name is identical`() {
+        val manager = ProfileManager.create(context)
+        val name = "No Change"
+        val profileId = manager.createNewProfile(name)
+
+        val originalJson = prefs.getString(profileId.value, null)
+
+        manager.renameProfile(profileId, name)
+
+        val currentJson = prefs.getString(profileId.value, null)
+        assertEquals("No disk write should occur for identical names", originalJson, currentJson)
+    }
+
+    @Test
+    fun `renameProfile throws IllegalArgumentException for missing profile`() {
+        val manager = ProfileManager.create(context)
+        val fakeId = ProfileId("p_ghost")
+
+        val exception =
+            assertThrows(IllegalArgumentException::class.java) {
+                manager.renameProfile(fakeId, "New Name")
+            }
+
+        assertTrue(exception.message!!.contains("not found"))
     }
 }

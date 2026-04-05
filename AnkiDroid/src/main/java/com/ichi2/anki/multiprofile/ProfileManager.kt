@@ -224,6 +224,44 @@ class ProfileManager private constructor(
         return ProfileRestrictedDirectory(directoryFile)
     }
 
+    /**
+     * Renames an existing profile by updating its display name in
+     * the registry.
+     *
+     * All other metadata fields (version, creation timestamp) are
+     * preserved. The change is persisted immediately.
+     *
+     * @param profileId      The [ProfileId] of the profile to rename.
+     * @param newDisplayName  The new user-facing name.
+     *
+     * @throws IllegalArgumentException if [profileId] does not
+     *   exist in the registry.
+     */
+    fun renameProfile(
+        profileId: ProfileId,
+        newDisplayName: String,
+    ) {
+        Timber.d("ProfileManager::renameProfile called for $profileId")
+
+        require(newDisplayName.isNotBlank()) {
+            "Profile display name must not be blank"
+        }
+
+        val existing =
+            profileRegistry.getProfileMetadata(profileId)
+                ?: throw IllegalArgumentException("Profile $profileId not found")
+
+        if (existing.displayName == newDisplayName) {
+            Timber.d("Rename skipped: New name matches existing name for $profileId")
+            return
+        }
+
+        val updated = existing.copy(displayName = newDisplayName)
+        profileRegistry.saveProfile(profileId, updated)
+
+        Timber.d("Renamed profile $profileId to '$newDisplayName'")
+    }
+
     private fun triggerAppRestart() {
         Timber.w("Restarting app to apply profile switch")
         // TODO: Implement process restart logic (e.g. ProcessPhoenix)
