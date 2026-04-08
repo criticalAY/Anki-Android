@@ -27,6 +27,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceManager.OnPreferenceTreeClickListener
+import com.ichi2.anki.analytics.AnalyticsConstants
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.databinding.FragmentSettingsBinding
 import com.ichi2.preferences.DialogFragmentProvider
@@ -49,8 +50,8 @@ abstract class SettingsFragment :
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
         UsageAnalytics.sendAnalyticsEvent(
-            category = UsageAnalytics.Category.SETTING,
-            action = UsageAnalytics.Actions.TAPPED_SETTING,
+            category = AnalyticsConstants.Category.SETTING,
+            action = AnalyticsConstants.Actions.TAPPED_SETTING,
             label = preference.key,
         )
         return super.onPreferenceTreeClick(preference)
@@ -66,8 +67,8 @@ abstract class SettingsFragment :
         if (key != null) {
             val valueToReport = getPreferenceReportableValue(sharedPreferences.get(key))
             UsageAnalytics.sendAnalyticsEvent(
-                category = UsageAnalytics.Category.SETTING,
-                action = UsageAnalytics.Actions.CHANGED_SETTING,
+                category = AnalyticsConstants.Category.SETTING,
+                action = AnalyticsConstants.Actions.CHANGED_SETTING,
                 value = valueToReport,
                 label = key,
             )
