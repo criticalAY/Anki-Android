@@ -107,13 +107,11 @@ class ImportFileSelectionFragment : DialogFragment() {
         } ?: emptyList()
     }
 
-    // safe as this data class is used as a container and it's not involved in any comparing
-    @Suppress("ArrayInDataClass")
-    private data class ImportEntry(
+    private class ImportEntry(
         @StringRes val titleRes: Int,
         val analyticsId: String,
         val type: ImportFileType,
-        var multiple: Boolean = false,
+        val multiple: Boolean = false,
         val mimeType: String = "*/*",
         val extraMimes: Array<String>? = null,
     )
