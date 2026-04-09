@@ -21,6 +21,7 @@ dependencyResolutionManagement {
 include(
     ":api",
     ":AnkiDroid",
+    ":baselineprofile",
     ":common",
     ":compat",
     ":libanki",
