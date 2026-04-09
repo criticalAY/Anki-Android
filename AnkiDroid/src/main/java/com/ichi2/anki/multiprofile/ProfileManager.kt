@@ -76,7 +76,7 @@ class ProfileManager private constructor(
         val defaultId = ProfileId.DEFAULT
 
         val metadata =
-            ProfileMetadata(displayName = DEFAULT_PROFILE_DISPLAY_NAME)
+            ProfileMetadata(displayName = ProfileName.fromTrustedSource(DEFAULT_PROFILE_DISPLAY_NAME))
 
         profileRegistry.saveProfile(id = defaultId, metadata = metadata, isActive = true)
         profileRegistry.setLastActiveProfileId(defaultId)
@@ -96,14 +96,14 @@ class ProfileManager private constructor(
      *
      * @throws Exception if profile creation or persistence fails.
      */
-    fun createNewProfile(displayName: String): ProfileId {
+    fun createNewProfile(displayName: ProfileName): ProfileId {
         val newProfileId = generateUniqueProfileId()
 
         val metadata = ProfileMetadata(displayName = displayName)
 
         profileRegistry.saveProfile(newProfileId, metadata)
 
-        Timber.i("Created new profile: $displayName (${newProfileId.value})")
+        Timber.i("Created new profile: ${displayName.value} (${newProfileId.value})")
         return newProfileId
     }
 
@@ -247,13 +247,9 @@ class ProfileManager private constructor(
      */
     fun renameProfile(
         profileId: ProfileId,
-        newDisplayName: String,
+        newDisplayName: ProfileName,
     ) {
         Timber.d("ProfileManager::renameProfile called for $profileId")
-
-        require(newDisplayName.isNotBlank()) {
-            "Profile display name must not be blank"
-        }
 
         val existing =
             profileRegistry.getProfileMetadata(profileId)
@@ -275,14 +271,14 @@ class ProfileManager private constructor(
      * Converted to JSON for storage to allow future extensibility (e.g. avatars, themes).
      */
     data class ProfileMetadata(
-        val displayName: String,
+        val displayName: ProfileName,
         val version: Int = 1,
         val createdTimestamp: String = getTimestamp(TimeManager.time),
     ) {
         fun toJson(): String =
             JSONObject()
                 .apply {
-                    put("displayName", displayName)
+                    put("displayName", displayName.value)
                     put("version", version)
                     put("created", createdTimestamp)
                 }.toString()
@@ -291,7 +287,7 @@ class ProfileManager private constructor(
             fun fromJson(jsonString: String): ProfileMetadata {
                 val json = JSONObject(jsonString)
                 return ProfileMetadata(
-                    displayName = json.optString("displayName", "Unknown"),
+                    displayName = ProfileName.fromTrustedSource(json.optString("displayName", "Unknown")),
                     version = json.optInt("version", 1),
                     createdTimestamp = json.optString("created", ""),
                 )
