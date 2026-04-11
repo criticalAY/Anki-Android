@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.google.material)
     implementation(libs.jakewharton.timber)
+    implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.vintage.engine)
     testImplementation(libs.junit.platform.launcher)

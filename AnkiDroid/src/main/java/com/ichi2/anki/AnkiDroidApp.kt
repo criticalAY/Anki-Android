@@ -59,6 +59,7 @@ import com.ichi2.anki.services.AlarmManagerService
 import com.ichi2.anki.services.NotificationService
 import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.ui.dialogs.ActivityAgnosticDialogs
+import com.ichi2.anki.widget.initWidgetDependencies
 import com.ichi2.utils.AdaptionUtil
 import com.ichi2.utils.ExceptionUtil
 import com.ichi2.utils.LanguageUtil
@@ -127,6 +128,9 @@ open class AnkiDroidApp :
             }
         }
         instance = this
+
+        // Initialize widget bridge dependencies
+        initWidgetDependencies()
 
         // Get preferences
         val preferences = this.sharedPrefs()
