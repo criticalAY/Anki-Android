@@ -45,6 +45,10 @@ android {
 apply(from = "../lint.gradle")
 
 dependencies {
+    // modules
+    implementation(project(":common"))
+    implementation(project(":libanki"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.google.material)

@@ -389,6 +389,7 @@ dependencies {
     implementation project(":compat")
     implementation project(":libanki")
     implementation project(":vbpd")
+    implementation project(":widgets")
 
     implementation libs.androidx.activity
     implementation libs.androidx.annotation
