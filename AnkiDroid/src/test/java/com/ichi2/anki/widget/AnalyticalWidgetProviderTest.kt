@@ -21,6 +21,7 @@ import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.widget.AnalyticsWidgetProvider
 import com.ichi2.widget.AppWidgetIds
+import com.ichi2.widget.bridge.WidgetAnalytics
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
@@ -59,7 +60,7 @@ class AnalyticalWidgetProviderTest : RobolectricTest() {
             context: android.content.Context,
             appWidgetManager: AppWidgetManager,
             appWidgetIds: AppWidgetIds,
-            usageAnalytics: UsageAnalytics,
+            usageAnalytics: WidgetAnalytics,
         ) {
             // Do nothing
         }

@@ -19,11 +19,11 @@ package com.ichi2.widget
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.ichi2.anki.CollectionManager.withCol
 import com.ichi2.anki.common.utils.ext.indexOfOrNull
 import com.ichi2.anki.databinding.ItemWidgetDeckConfigBinding
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.model.SelectableDeck
+import com.ichi2.widget.bridge.WidgetDependencies
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -69,7 +69,7 @@ class WidgetConfigScreenAdapter(
         coroutineScope.launch {
             val deckName =
                 withContext(Dispatchers.IO) {
-                    withCol { decks.getLegacy(deck.deckId)!!.name }
+                    WidgetDependencies.collectionAccess.withCol { decks.getLegacy(deck.deckId)!!.name }
                 }
             holder.binding.deckNameTextView.text = deckName
         }

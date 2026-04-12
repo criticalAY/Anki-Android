@@ -32,12 +32,9 @@ import androidx.annotation.LayoutRes
 import androidx.core.app.PendingIntentCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.IntentHandler
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
-import com.ichi2.anki.compat.CompatHelper.Companion.registerReceiverCompat
-import com.ichi2.anki.preferences.sharedPrefs
+import com.ichi2.widget.bridge.WidgetAnalytics
+import com.ichi2.widget.bridge.WidgetDependencies
 import timber.log.Timber
 import kotlin.math.sqrt
 
@@ -52,20 +49,20 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: AppWidgetIds,
-        usageAnalytics: UsageAnalytics,
+        usageAnalytics: WidgetAnalytics,
     ) {
         WidgetStatus.updateInBackground(context)
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        val preferences = context.sharedPrefs()
+        val preferences = WidgetDependencies.preferences.sharedPrefs(context)
         preferences.edit(commit = true) { putBoolean("widgetSmallEnabled", true) }
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        val preferences = context.sharedPrefs()
+        val preferences = WidgetDependencies.preferences.sharedPrefs(context)
         preferences.edit(commit = true) { putBoolean("widgetSmallEnabled", false) }
     }
 
@@ -110,7 +107,7 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
         private fun buildUpdate(context: Context): RemoteViews {
             Timber.d("updating small widget UI")
             val updateViews = RemoteViews(context.packageName, widgetSmallLayout)
-            val mounted = AnkiDroidApp.isSdCardMounted
+            val mounted = WidgetDependencies.appState.isSdCardMounted
             if (!mounted) {
                 updateViews.setViewVisibility(R.id.widget_due, View.INVISIBLE)
                 updateViews.setViewVisibility(R.id.widget_eta, View.INVISIBLE)
@@ -128,10 +125,10 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
                                 if (action != null && action == Intent.ACTION_MEDIA_MOUNTED) {
                                     Timber.d("mountReceiver - Action = Media Mounted")
                                     if (remounted) {
-                                        WidgetStatus.updateInBackground(AnkiDroidApp.instance)
+                                        WidgetStatus.updateInBackground(WidgetDependencies.appState.applicationInstance)
                                         remounted = false
                                         if (mountReceiver != null) {
-                                            AnkiDroidApp.instance.unregisterReceiver(mountReceiver)
+                                            WidgetDependencies.appState.applicationInstance.unregisterReceiver(mountReceiver)
                                         }
                                     } else {
                                         remounted = true
@@ -142,7 +139,12 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
                     val iFilter = IntentFilter()
                     iFilter.addAction(Intent.ACTION_MEDIA_MOUNTED)
                     iFilter.addDataScheme("file")
-                    AnkiDroidApp.instance.registerReceiverCompat(mountReceiver, iFilter, ContextCompat.RECEIVER_EXPORTED)
+                    ContextCompat.registerReceiver(
+                        WidgetDependencies.appState.applicationInstance,
+                        mountReceiver,
+                        iFilter,
+                        ContextCompat.RECEIVER_EXPORTED,
+                    )
                 }
             } else {
                 // Compute the total number of cards due.
@@ -176,9 +178,7 @@ class AnkiDroidWidgetSmall : AnalyticsWidgetProvider() {
 
             // Add a click listener to open Anki from the icon.
             // This should be always there, whether there are due cards or not.
-            val ankiDroidIntent = Intent(context, IntentHandler::class.java)
-            ankiDroidIntent.action = Intent.ACTION_MAIN
-            ankiDroidIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+            val ankiDroidIntent = WidgetDependencies.intentFactory.intentToMainActivity(context)
             val pendingAnkiDroidIntent =
                 PendingIntentCompat.getActivity(
                     context,

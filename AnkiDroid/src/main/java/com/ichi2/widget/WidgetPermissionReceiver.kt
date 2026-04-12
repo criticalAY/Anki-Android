@@ -21,7 +21,7 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import com.ichi2.anki.IntentHandler
+import com.ichi2.widget.bridge.WidgetDependencies
 
 /**
  * BroadcastReceiver to handle the scenario where storage permissions are granted,
@@ -32,7 +32,7 @@ class WidgetPermissionReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        if (IntentHandler.grantedStoragePermissions(context, showToast = false)) {
+        if (WidgetDependencies.intentFactory.grantedStoragePermissions(context, showToast = false)) {
             val appWidgetManager = getAppWidgetManager(context) ?: return
             val widgetIds = appWidgetManager.getAppWidgetIdsEx(ComponentName(context, AddNoteWidget::class.java))
             AddNoteWidget.updateWidgets(context, appWidgetManager, widgetIds)

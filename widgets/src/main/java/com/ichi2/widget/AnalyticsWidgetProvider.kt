@@ -21,8 +21,8 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.CallSuper
-import com.ichi2.anki.IntentHandler.Companion.grantedStoragePermissions
-import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.widget.bridge.WidgetAnalytics
+import com.ichi2.widget.bridge.WidgetDependencies
 import timber.log.Timber
 
 /**
@@ -49,7 +49,7 @@ abstract class AnalyticsWidgetProvider : AppWidgetProvider() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         Timber.d("${this.javaClass.name}: Widget enabled")
-        UsageAnalytics.sendAnalyticsEvent(this.javaClass.simpleName, "enabled")
+        WidgetDependencies.analytics.sendAnalyticsEvent(this.javaClass.simpleName, "enabled")
     }
 
     /**
@@ -61,7 +61,7 @@ abstract class AnalyticsWidgetProvider : AppWidgetProvider() {
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         Timber.d("${this.javaClass.name}: Widget disabled")
-        UsageAnalytics.sendAnalyticsEvent(this.javaClass.simpleName, "disabled")
+        WidgetDependencies.analytics.sendAnalyticsEvent(this.javaClass.simpleName, "disabled")
     }
 
     @CallSuper
@@ -86,13 +86,12 @@ abstract class AnalyticsWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
-        if (runCatching { grantedStoragePermissions(context, showToast = false) }.getOrNull() != true) {
+        if (runCatching { WidgetDependencies.intentFactory.grantedStoragePermissions(context, showToast = false) }.getOrNull() != true) {
             Timber.w("Opening widget ${this.javaClass.name} without storage access")
             return
         }
-        // Pass usageAnalytics to performUpdate
         Timber.d("${this.javaClass.name}: performUpdate")
-        performUpdate(context, appWidgetManager, AppWidgetIds(appWidgetIds), UsageAnalytics)
+        performUpdate(context, appWidgetManager, AppWidgetIds(appWidgetIds), WidgetDependencies.analytics)
     }
 
     /**
@@ -105,13 +104,13 @@ abstract class AnalyticsWidgetProvider : AppWidgetProvider() {
      * @param context The context in which the receiver is running.
      * @param appWidgetManager The AppWidgetManager instance to use for updating widgets.
      * @param appWidgetIds The app widget IDs to update.
-     * @param usageAnalytics The UsageAnalytics instance for logging analytics events.
+     * @param usageAnalytics The analytics instance for logging analytics events.
      */
 
     abstract fun performUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: AppWidgetIds,
-        usageAnalytics: UsageAnalytics,
+        usageAnalytics: WidgetAnalytics,
     )
 }

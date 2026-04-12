@@ -24,21 +24,17 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.CrashReportService
-import com.ichi2.anki.IntentHandler.Companion.intentToReviewDeckFromShortcuts
 import com.ichi2.anki.R
-import com.ichi2.anki.analytics.UsageAnalytics
-import com.ichi2.anki.isCollectionEmpty
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks.Companion.NOT_FOUND_DECK_ID
-import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.widget.ACTION_UPDATE_WIDGET
 import com.ichi2.widget.AnalyticsWidgetProvider
 import com.ichi2.widget.AppWidgetId
 import com.ichi2.widget.AppWidgetId.Companion.INVALID_APPWIDGET_ID
 import com.ichi2.widget.AppWidgetId.Companion.getAppWidgetId
 import com.ichi2.widget.AppWidgetIds
+import com.ichi2.widget.bridge.WidgetAnalytics
+import com.ichi2.widget.bridge.WidgetDependencies
 import com.ichi2.widget.cancelRecurringAlarm
 import com.ichi2.widget.deckpicker.DeckWidgetData
 import com.ichi2.widget.deckpicker.getDeckNameAndStats
@@ -88,8 +84,8 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
                 return
             }
 
-            AnkiDroidApp.applicationScope.launch {
-                val isCollectionEmpty = isCollectionEmpty()
+            WidgetDependencies.appState.applicationScope.launch {
+                val isCollectionEmpty = WidgetDependencies.collectionAccess.isCollectionEmpty()
                 if (isCollectionEmpty) {
                     showCollectionDeck(context, appWidgetManager, appWidgetId, remoteViews)
                     return@launch
@@ -193,9 +189,9 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
 
             val intent =
                 if (!isEmptyDeck) {
-                    intentToReviewDeckFromShortcuts(context, deckData.deckId)
+                    WidgetDependencies.intentFactory.intentToReviewDeck(context, deckData.deckId)
                 } else {
-                    DeckOptionsDestination.fromDeckId(deckData.deckId).toIntent(context)
+                    WidgetDependencies.intentFactory.intentToDeckOptions(context, deckData.deckId)
                 }
             val pendingIntent =
                 PendingIntent.getActivity(
@@ -233,7 +229,7 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: AppWidgetIds,
-        usageAnalytics: UsageAnalytics,
+        usageAnalytics: WidgetAnalytics,
     ) {
         Timber.d("Performing widget update for appWidgetIds: %s", appWidgetIds)
 
@@ -321,7 +317,7 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
             }
             else -> {
                 Timber.e("Unexpected action received: ${intent.action}")
-                CrashReportService.sendExceptionReport(
+                WidgetDependencies.crashReporter.sendExceptionReport(
                     Exception("Unexpected action received: ${intent.action}"),
                     "CardAnalysisWidget - onReceive",
                     onlyIfSilent = true,

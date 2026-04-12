@@ -15,13 +15,9 @@
 package com.ichi2.widget
 
 import android.content.Context
-import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.MetaDB
 import com.ichi2.anki.R
-import com.ichi2.anki.preferences.sharedPrefs
-import com.ichi2.anki.settings.Prefs
 import com.ichi2.anki.utils.ext.allDecksCounts
+import com.ichi2.widget.bridge.WidgetDependencies
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -42,11 +38,11 @@ object WidgetStatus {
      *             https://developer.android.com/guide/topics/appwidgets/#MetaData
      */
     fun updateInBackground(context: Context) {
-        val preferences = context.sharedPrefs()
+        val preferences = WidgetDependencies.preferences.sharedPrefs(context)
         smallWidgetEnabled = preferences.getBoolean("widgetSmallEnabled", false)
         val canExecuteTask = smallWidgetUpdateJob == null || smallWidgetUpdateJob?.isActive == false
 
-        if (Prefs.newReviewRemindersEnabled) {
+        if (WidgetDependencies.preferences.newReviewRemindersEnabled) {
             if (smallWidgetEnabled && canExecuteTask) {
                 Timber.d("WidgetStatus.update(): updating")
                 smallWidgetUpdateJob = launchSmallWidgetUpdateJob(context)
@@ -79,28 +75,28 @@ object WidgetStatus {
         }
 
     suspend fun updateSmallWidgetStatus(context: Context) {
-        if (!AnkiDroidApp.isSdCardMounted) {
+        if (!WidgetDependencies.appState.isSdCardMounted) {
             Timber.w("updateStatus failed: no SD Card")
             return
         }
         val status = querySmallWidgetStatus()
-        MetaDB.storeSmallWidgetStatus(context, status)
+        WidgetDependencies.metaStorage.storeSmallWidgetStatus(context, status)
         if (smallWidgetEnabled) {
             Timber.i("triggering small widget UI update")
             AnkiDroidWidgetSmall.UpdateService().doUpdate(context)
         }
-        if (!Prefs.newReviewRemindersEnabled) {
-            (context.applicationContext as AnkiDroidApp).scheduleNotification()
+        if (!WidgetDependencies.preferences.newReviewRemindersEnabled) {
+            WidgetDependencies.appState.scheduleNotification(context)
         }
     }
 
     /** Returns the status of each of the decks.  */
-    fun fetchSmall(context: Context): SmallWidgetStatus = MetaDB.getWidgetSmallStatus(context)
+    fun fetchSmall(context: Context): SmallWidgetStatus = WidgetDependencies.metaStorage.getWidgetSmallStatus(context)
 
-    fun fetchDue(context: Context): Int = MetaDB.getNotificationStatus(context)
+    fun fetchDue(context: Context): Int = WidgetDependencies.metaStorage.getNotificationStatus(context)
 
     private suspend fun querySmallWidgetStatus(): SmallWidgetStatus =
-        withCol {
+        WidgetDependencies.collectionAccess.withCol {
             val total = sched.allDecksCounts()
             val eta = sched.eta(total, false)
             SmallWidgetStatus(total.count(), eta)
