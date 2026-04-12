@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colors referenced by widget layouts -->
+    <color name="flag_reviewer_red">#ff0000</color>
+    <color name="flag_reviewer_green">#057A05</color>
+    <color name="flag_reviewer_blue">#ff1976d2</color>
+    <color name="material_red_A700">#ffd50000</color>
+</resources>

@@ -24,8 +24,8 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import com.ichi2.anki.R
 import com.ichi2.anki.libanki.DeckId
+import com.ichi2.anki.widgets.R
 import com.ichi2.widget.ACTION_UPDATE_WIDGET
 import com.ichi2.widget.AnalyticsWidgetProvider
 import com.ichi2.widget.AppWidgetId
@@ -170,7 +170,7 @@ class DeckPickerWidget : AnalyticsWidgetProvider() {
             remoteViews.setViewVisibility(R.id.deckCollection, View.GONE)
 
             val configIntent =
-                Intent(context, DeckPickerWidgetConfig::class.java).apply {
+                Intent(context, WidgetDependencies.intentFactory.deckPickerWidgetConfigClass()).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId.id)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
@@ -197,7 +197,7 @@ class DeckPickerWidget : AnalyticsWidgetProvider() {
             remoteViews.setViewVisibility(R.id.deckCollection, View.GONE)
 
             val configIntent =
-                Intent(context, DeckPickerWidgetConfig::class.java).apply {
+                Intent(context, WidgetDependencies.intentFactory.deckPickerWidgetConfigClass()).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId.id)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }

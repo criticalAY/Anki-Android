@@ -18,7 +18,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.widget.RemoteViews
 import androidx.core.app.PendingIntentCompat
-import com.ichi2.anki.R
+import com.ichi2.anki.widgets.R
 import com.ichi2.widget.bridge.WidgetAnalytics
 import com.ichi2.widget.bridge.WidgetDependencies
 

@@ -289,7 +289,7 @@ class NotificationService : BroadcastReceiver() {
                 val cardsDueText =
                     context.resources
                         .getQuantityString(
-                            R.plurals.widget_minimum_cards_due_notification_ticker_text,
+                            com.ichi2.anki.widgets.R.plurals.widget_minimum_cards_due_notification_ticker_text,
                             dueCardsCount,
                             dueCardsCount,
                         )

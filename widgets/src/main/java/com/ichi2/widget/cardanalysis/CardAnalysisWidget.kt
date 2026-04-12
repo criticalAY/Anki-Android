@@ -24,9 +24,9 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
-import com.ichi2.anki.R
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.Decks.Companion.NOT_FOUND_DECK_ID
+import com.ichi2.anki.widgets.R
 import com.ichi2.widget.ACTION_UPDATE_WIDGET
 import com.ichi2.widget.AnalyticsWidgetProvider
 import com.ichi2.widget.AppWidgetId
@@ -123,7 +123,7 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
             remoteViews.setViewVisibility(R.id.deckNameCardAnalysis, View.GONE)
 
             val configIntent =
-                Intent(context, CardAnalysisWidgetConfig::class.java).apply {
+                Intent(context, WidgetDependencies.intentFactory.cardAnalysisWidgetConfigClass()).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId.id)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
@@ -152,7 +152,7 @@ class CardAnalysisWidget : AnalyticsWidgetProvider() {
             remoteViews.setViewVisibility(R.id.deckNameCardAnalysis, View.GONE)
 
             val configIntent =
-                Intent(context, CardAnalysisWidgetConfig::class.java).apply {
+                Intent(context, WidgetDependencies.intentFactory.cardAnalysisWidgetConfigClass()).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId.id)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }

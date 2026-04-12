@@ -32,7 +32,7 @@ import androidx.annotation.LayoutRes
 import androidx.core.app.PendingIntentCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.ichi2.anki.R
+import com.ichi2.anki.widgets.R
 import com.ichi2.widget.bridge.WidgetAnalytics
 import com.ichi2.widget.bridge.WidgetDependencies
 import timber.log.Timber

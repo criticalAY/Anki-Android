@@ -63,4 +63,10 @@ interface WidgetIntentFactory {
         context: Context,
         deckId: DeckId,
     ): Intent
+
+    /** Returns the Class of the CardAnalysisWidgetConfig activity */
+    fun cardAnalysisWidgetConfigClass(): Class<*>
+
+    /** Returns the Class of the DeckPickerWidgetConfig activity */
+    fun deckPickerWidgetConfigClass(): Class<*>
 }

@@ -82,6 +82,10 @@ class WidgetIntentFactoryImpl : WidgetIntentFactory {
         context: Context,
         deckId: DeckId,
     ): Intent = DeckOptionsDestination.fromDeckId(deckId).toIntent(context)
+
+    override fun cardAnalysisWidgetConfigClass(): Class<*> = com.ichi2.widget.cardanalysis.CardAnalysisWidgetConfig::class.java
+
+    override fun deckPickerWidgetConfigClass(): Class<*> = com.ichi2.widget.deckpicker.DeckPickerWidgetConfig::class.java
 }
 
 class WidgetCollectionAccessImpl : WidgetCollectionAccess {

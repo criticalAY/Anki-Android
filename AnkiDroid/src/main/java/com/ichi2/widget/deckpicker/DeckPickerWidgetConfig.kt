@@ -56,6 +56,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import com.ichi2.anki.widgets.R as WidgetR
 
 /**
  * Activity for configuring the Deck Picker Widget.
@@ -137,7 +138,7 @@ class DeckPickerWidgetConfig :
         deckAdapter =
             WidgetConfigScreenAdapter { deck, position ->
                 deckAdapter.removeDeck(deck.deckId)
-                showSnackbar(R.string.deck_removed_from_widget)
+                showSnackbar(WidgetR.string.deck_removed_from_widget)
                 updateViewVisibility()
                 updateFabVisibility()
                 updateDoneButtonVisibility()
@@ -320,7 +321,7 @@ class DeckPickerWidgetConfig :
     private fun displayDeckSelectionDialog(decks: List<SelectableDeck>) {
         val dialog =
             DeckSelectionDialog.newInstance(
-                title = getString(R.string.select_decks_title),
+                title = getString(WidgetR.string.select_decks_title),
                 summaryMessage = null,
                 keepRestoreDefaultButton = false,
                 decks = decks,
@@ -339,7 +340,7 @@ class DeckPickerWidgetConfig :
 
         if (isDeckAlreadySelected) {
             // TODO: Eventually, ensure that the user can't select a deck that is already selected.
-            showSnackbar(getString(R.string.deck_already_selected_message))
+            showSnackbar(getString(WidgetR.string.deck_already_selected_message))
             return
         }
 
@@ -347,7 +348,7 @@ class DeckPickerWidgetConfig :
         if (deckAdapter.itemCount >= MAX_DECKS_ALLOWED) {
             // Snackbar will only be shown when adding the 5th deck
             if (deckAdapter.itemCount == MAX_DECKS_ALLOWED) {
-                showSnackbar(resources.getQuantityString(R.plurals.deck_limit_reached, MAX_DECKS_ALLOWED, MAX_DECKS_ALLOWED))
+                showSnackbar(resources.getQuantityString(WidgetR.plurals.deck_limit_reached, MAX_DECKS_ALLOWED, MAX_DECKS_ALLOWED))
             }
             // The FAB visibility should be handled in updateFabVisibility()
         } else {
@@ -361,7 +362,7 @@ class DeckPickerWidgetConfig :
 
             // Show snackbar if the deck is the 5th deck
             if (deckAdapter.itemCount == MAX_DECKS_ALLOWED) {
-                showSnackbar(resources.getQuantityString(R.plurals.deck_limit_reached, MAX_DECKS_ALLOWED, MAX_DECKS_ALLOWED))
+                showSnackbar(resources.getQuantityString(WidgetR.plurals.deck_limit_reached, MAX_DECKS_ALLOWED, MAX_DECKS_ALLOWED))
             }
         }
     }

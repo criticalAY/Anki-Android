@@ -164,7 +164,7 @@ class CardAnalysisWidgetConfig :
         val decks = SelectableDeck.fromCollection(includeFiltered = true)
         val dialog =
             DeckSelectionDialog.newInstance(
-                title = getString(R.string.select_deck_title),
+                title = getString(com.ichi2.anki.widgets.R.string.select_deck_title),
                 summaryMessage = null,
                 keepRestoreDefaultButton = false,
                 decks = decks,

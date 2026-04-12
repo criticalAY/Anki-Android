@@ -752,7 +752,14 @@ open class DeckPicker :
             }
 
             supportActionBar?.apply {
-                subtitle = if (dueCount == 0) null else resources.getQuantityString(R.plurals.widget_cards_due, dueCount, dueCount)
+                subtitle =
+                    if (dueCount ==
+                        0
+                    ) {
+                        null
+                    } else {
+                        resources.getQuantityString(com.ichi2.anki.widgets.R.plurals.widget_cards_due, dueCount, dueCount)
+                    }
                 val toolbar = findViewById<Toolbar>(R.id.toolbar)
                 TooltipCompat.setTooltipText(toolbar, toolbar.subtitle)
             }
