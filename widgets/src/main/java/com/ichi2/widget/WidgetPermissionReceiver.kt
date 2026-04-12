@@ -18,7 +18,6 @@
 package com.ichi2.widget
 
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import com.ichi2.widget.bridge.WidgetDependencies
@@ -33,9 +32,7 @@ class WidgetPermissionReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         if (WidgetDependencies.intentFactory.grantedStoragePermissions(context, showToast = false)) {
-            val appWidgetManager = getAppWidgetManager(context) ?: return
-            val widgetIds = appWidgetManager.getAppWidgetIdsEx(ComponentName(context, AddNoteWidget::class.java))
-            AddNoteWidget.updateWidgets(context, appWidgetManager, widgetIds)
+            WidgetDependencies.appState.updateAddNoteWidgets(context)
         }
     }
 }

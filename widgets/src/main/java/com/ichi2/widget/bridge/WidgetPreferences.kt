@@ -29,4 +29,7 @@ interface WidgetPreferences {
 
     /** Whether the new review reminders feature is enabled */
     val newReviewRemindersEnabled: Boolean
+
+    /** Whether legacy notification is enabled (minimumCardsDue < 1000000) */
+    fun isLegacyNotificationEnabled(context: Context): Boolean
 }
