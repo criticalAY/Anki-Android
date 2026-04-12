@@ -15,9 +15,8 @@
 package com.ichi2.widget
 
 import android.content.Context
-import com.ichi2.anki.R
-import com.ichi2.anki.utils.ext.allDecksCounts
 import com.ichi2.widget.bridge.WidgetDependencies
+import com.ichi2.widget.utils.allDecksCounts
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
@@ -50,10 +49,7 @@ object WidgetStatus {
                 Timber.d("WidgetStatus.update(): already running or not enabled")
             }
         } else {
-            val notificationEnabled =
-                preferences
-                    .getString(context.getString(R.string.pref_notifications_minimum_cards_due_key), "1000001")!!
-                    .toInt() < 1000000
+            val notificationEnabled = WidgetDependencies.preferences.isLegacyNotificationEnabled(context)
             if ((smallWidgetEnabled || notificationEnabled) && canExecuteTask) {
                 Timber.d("WidgetStatus.update(): updating")
                 smallWidgetUpdateJob = launchSmallWidgetUpdateJob(context)
@@ -83,7 +79,7 @@ object WidgetStatus {
         WidgetDependencies.metaStorage.storeSmallWidgetStatus(context, status)
         if (smallWidgetEnabled) {
             Timber.i("triggering small widget UI update")
-            AnkiDroidWidgetSmall.UpdateService().doUpdate(context)
+            WidgetDependencies.appState.updateSmallWidgetUi(context)
         }
         if (!WidgetDependencies.preferences.newReviewRemindersEnabled) {
             WidgetDependencies.appState.scheduleNotification(context)

@@ -36,4 +36,10 @@ interface WidgetAppState {
 
     /** Schedules a notification for review reminders */
     fun scheduleNotification(context: Context)
+
+    /** Triggers the small widget UI update */
+    fun updateSmallWidgetUi(context: Context)
+
+    /** Triggers AddNoteWidget update after permission grant */
+    fun updateAddNoteWidgets(context: Context)
 }

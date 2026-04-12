@@ -32,6 +32,8 @@ import com.ichi2.anki.noteeditor.NoteEditorLauncher
 import com.ichi2.anki.pages.DeckOptionsDestination
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.widget.AddNoteWidget
+import com.ichi2.widget.AnkiDroidWidgetSmall
 import com.ichi2.widget.SmallWidgetStatus
 import com.ichi2.widget.bridge.WidgetAnalytics
 import com.ichi2.widget.bridge.WidgetAppState
@@ -41,6 +43,8 @@ import com.ichi2.widget.bridge.WidgetDependencies
 import com.ichi2.widget.bridge.WidgetIntentFactory
 import com.ichi2.widget.bridge.WidgetMetaStorage
 import com.ichi2.widget.bridge.WidgetPreferences
+import com.ichi2.widget.getAppWidgetIdsEx
+import com.ichi2.widget.getAppWidgetManager
 import kotlinx.coroutines.CoroutineScope
 
 class WidgetAnalyticsImpl : WidgetAnalytics {
@@ -99,6 +103,22 @@ class WidgetAppStateImpl : WidgetAppState {
     override fun scheduleNotification(context: Context) {
         (context.applicationContext as AnkiDroidApp).scheduleNotification()
     }
+
+    override fun updateSmallWidgetUi(context: Context) {
+        AnkiDroidWidgetSmall
+            .UpdateService()
+            .doUpdate(context)
+    }
+
+    override fun updateAddNoteWidgets(context: Context) {
+        val appWidgetManager = getAppWidgetManager(context) ?: return
+        val widgetIds =
+            appWidgetManager.getAppWidgetIdsEx(
+                android.content.ComponentName(context, AddNoteWidget::class.java),
+            )
+        AddNoteWidget
+            .updateWidgets(context, appWidgetManager, widgetIds)
+    }
 }
 
 class WidgetCrashReporterImpl : WidgetCrashReporter {
@@ -129,6 +149,13 @@ class WidgetPreferencesImpl : WidgetPreferences {
 
     override val newReviewRemindersEnabled: Boolean
         get() = Prefs.newReviewRemindersEnabled
+
+    override fun isLegacyNotificationEnabled(context: Context): Boolean {
+        val preferences = context.sharedPrefs()
+        return preferences
+            .getString(context.getString(com.ichi2.anki.R.string.pref_notifications_minimum_cards_due_key), "1000001")!!
+            .toInt() < 1000000
+    }
 }
 
 /**
