@@ -136,7 +136,7 @@ open class AnkiDroidApp :
         // Ensures any change is propagated to widgets
         ChangeManager.subscribe(this)
 
-        CrashReportService.initialize(this)
+        initializeAcraCrashReporter()
         val logType = LogType.value
         when (logType) {
             LogType.DEBUG -> Timber.plant(DebugTree())
@@ -167,7 +167,7 @@ open class AnkiDroidApp :
         }
 
         // Stop after analytics and logging are initialised.
-        if (CrashReportService.isProperServiceProcess()) {
+        if (isAcraSenderProcess()) {
             Timber.d("Skipping AnkiDroidApp.onCreate from ACRA sender process")
             return
         }

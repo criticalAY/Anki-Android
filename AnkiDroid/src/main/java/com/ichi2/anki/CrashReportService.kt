@@ -417,3 +417,13 @@ fun <T> runCatchingWithReport(
         if (e is Error) throw e
         Result.failure(e)
     }
+
+/**
+ * Initializes ACRA crash reporting.
+ */
+context(application: Application)
+fun initializeAcraCrashReporter() {
+    CrashReportService.initialize(application)
+}
+
+fun isAcraSenderProcess(): Boolean = CrashReportService.isProperServiceProcess()
