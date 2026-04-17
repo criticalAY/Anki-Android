@@ -24,9 +24,9 @@ import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionHelper
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.dialogs.TtsVoicesDialogFragment
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.settings.Prefs

@@ -20,7 +20,7 @@ import android.content.Context
 import android.os.Build
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionManager
-import com.ichi2.anki.CrashReportService
+import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.utils.VersionUtils.pkgVersionName
 import com.ichi2.utils.getWebViewInfo
 import org.acra.util.Installation

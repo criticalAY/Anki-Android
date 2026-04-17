@@ -34,8 +34,8 @@ import anki.scheduler.CardAnswer
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.BuildConfig
 import com.ichi2.anki.CollectionManager
-import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.FlashCardsContract
+import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.utils.annotation.KotlinCleanup
 import com.ichi2.anki.libanki.Card

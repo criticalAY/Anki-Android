@@ -26,10 +26,10 @@ import android.view.View
 import android.widget.RemoteViews
 import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.CollectionManager.withCol
-import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.IntentHandler.Companion.intentToReviewDeckFromShortcuts
 import com.ichi2.anki.R
 import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.isCollectionEmpty
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.pages.DeckOptionsDestination

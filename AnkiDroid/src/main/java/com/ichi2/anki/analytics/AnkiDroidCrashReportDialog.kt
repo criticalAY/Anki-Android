@@ -22,9 +22,9 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.edit
-import com.ichi2.anki.CrashReportService
-import com.ichi2.anki.CrashReporter
 import com.ichi2.anki.R
+import com.ichi2.anki.common.crashreporting.CrashReportService
+import com.ichi2.anki.common.crashreporting.CrashReporter
 import com.ichi2.anki.databinding.DialogFeedbackBinding
 import com.ichi2.anki.preferences.sharedPrefs
 import org.acra.dialog.CrashReportDialog

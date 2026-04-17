@@ -22,13 +22,13 @@ import androidx.core.content.edit
 import androidx.test.annotation.UiThreadTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.AnkiDroidApp
-import com.ichi2.anki.CrashReportService
-import com.ichi2.anki.CrashReporter
-import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_ALWAYS
-import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_ASK
 import com.ichi2.anki.R
 import com.ichi2.anki.acraCoreConfigBuilder
 import com.ichi2.anki.analytics.UsageAnalytics
+import com.ichi2.anki.common.crashreporting.CrashReportService
+import com.ichi2.anki.common.crashreporting.CrashReporter
+import com.ichi2.anki.common.crashreporting.CrashReporter.Companion.FEEDBACK_REPORT_ALWAYS
+import com.ichi2.anki.common.crashreporting.CrashReporter.Companion.FEEDBACK_REPORT_ASK
 import com.ichi2.anki.logging.ProductionCrashReportingTree
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.servicelayer.ThrowableFilterService

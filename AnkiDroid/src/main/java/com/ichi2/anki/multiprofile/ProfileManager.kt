@@ -26,8 +26,8 @@ import android.webkit.WebView
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.ichi2.anki.CrashReportService
 import com.ichi2.anki.IntentHandler
+import com.ichi2.anki.common.crashreporting.CrashReportService
 import com.ichi2.anki.common.time.TimeManager
 import com.ichi2.anki.common.time.getTimestamp
 import org.acra.ACRA
