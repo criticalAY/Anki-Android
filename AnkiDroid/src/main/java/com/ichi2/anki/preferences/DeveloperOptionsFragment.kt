@@ -60,7 +60,7 @@ class DeveloperOptionsFragment : SettingsFragment() {
         requirePreference<Preference>(R.string.pref_trigger_crash_key).setOnPreferenceClickListener {
             // If we don't delete the limiter data, our test crash may not go through,
             // but we are triggering it very much on purpose, we want to see the crash in ACRA
-            this.context?.let { c -> CrashReportService.deleteACRALimiterData(c) }
+            this.context?.let { c -> CrashReportService.deleteLimiterData(c) }
 
             Timber.w("Crash triggered on purpose from advanced preferences in debug mode")
             throw RuntimeException("This is a test crash")

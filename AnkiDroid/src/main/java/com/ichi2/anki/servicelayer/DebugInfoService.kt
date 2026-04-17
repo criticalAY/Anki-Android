@@ -53,7 +53,7 @@ object DebugInfoService {
             .replace("\n", "  \n")
     }
 
-    private fun isSendingCrashReports(context: Context): Boolean = CrashReportService.isAcraEnabled(context, false)
+    private fun isSendingCrashReports(context: Context): Boolean = CrashReportService.isEnabled(context, false)
 }
 
 /**

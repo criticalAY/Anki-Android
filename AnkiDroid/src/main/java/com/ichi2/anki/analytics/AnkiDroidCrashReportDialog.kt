@@ -23,6 +23,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.content.edit
 import com.ichi2.anki.CrashReportService
+import com.ichi2.anki.CrashReporter
 import com.ichi2.anki.R
 import com.ichi2.anki.databinding.DialogFeedbackBinding
 import com.ichi2.anki.preferences.sharedPrefs
@@ -87,11 +88,11 @@ class AnkiDroidCrashReportDialog :
             if (autoReport) {
                 preferences.edit {
                     putString(
-                        CrashReportService.FEEDBACK_REPORT_KEY,
-                        CrashReportService.FEEDBACK_REPORT_ALWAYS,
+                        CrashReporter.FEEDBACK_REPORT_KEY,
+                        CrashReporter.FEEDBACK_REPORT_ALWAYS,
                     )
                 }
-                CrashReportService.setAcraReportingMode(CrashReportService.FEEDBACK_REPORT_ALWAYS)
+                CrashReportService.setReportingMode(CrashReporter.FEEDBACK_REPORT_ALWAYS)
             }
             // Send the crash report
             helper!!.sendCrash(binding.userComment.text.toString(), "")
@@ -100,7 +101,7 @@ class AnkiDroidCrashReportDialog :
             // The limiter persists it's limit info *before* the user cancels.
             // Therefore, on cancel, purge limits to make sure the user may actually send in future.
             // Better to maybe send to many reports than definitely too few.
-            CrashReportService.deleteACRALimiterData(this)
+            CrashReportService.deleteLimiterData(this)
             helper!!.cancelReports()
         }
         finish()

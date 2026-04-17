@@ -23,6 +23,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.content.edit
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
+import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_ALWAYS
+import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_ASK
+import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_KEY
+import com.ichi2.anki.CrashReporter.Companion.FEEDBACK_REPORT_NEVER
 import com.ichi2.anki.analytics.AnkiDroidCrashReportDialog
 import com.ichi2.anki.analytics.UsageAnalytics
 import com.ichi2.anki.analytics.UsageAnalytics.sendAnalyticsException
@@ -43,13 +47,7 @@ import org.acra.config.ToastConfigurationBuilder
 import org.acra.sender.HttpSender
 import timber.log.Timber
 
-object CrashReportService {
-    // ACRA constants used for stored preferences
-    const val FEEDBACK_REPORT_KEY = "reportErrorMode"
-    const val FEEDBACK_REPORT_ASK = "2"
-    const val FEEDBACK_REPORT_NEVER = "1"
-    const val FEEDBACK_REPORT_ALWAYS = "0"
-
+private object AcraCrashReporter : CrashReporter {
     /** Our ACRA configurations, initialized during Application.onCreate()  */
     @JvmStatic
     private var logcatArgs =
@@ -166,7 +164,7 @@ object CrashReportService {
      */
     @JvmStatic
     fun initialize(application: Application) {
-        CrashReportService.application = application
+        this.application = application
         // FIXME ACRA needs to reinitialize after language is changed, but with the new language
         //   this is difficult because the Application (AnkiDroidApp) does not change it's baseContext
         //   perhaps a solution could be to change AnkiDroidApp to have a context wrapper that it sets
@@ -174,7 +172,7 @@ object CrashReportService {
         //   in GeneralSettingsFragment for the language dialog change listener, the context wrapper
         //   could be updated directly with the new locale code so that calling getString on would fetch
         //   the new language string ?
-        toastText = ToastType.AUTO_TOAST.getToastMessage(CrashReportService.application)
+        toastText = ToastType.AUTO_TOAST.getToastMessage(application)
 
         // Setup logging and crash reporting
         if (BuildConfig.DEBUG) {
@@ -195,7 +193,7 @@ object CrashReportService {
      * Set the reporting mode for ACRA based on the value of the FEEDBACK_REPORT_KEY preference
      * @param value value of FEEDBACK_REPORT_KEY preference
      */
-    fun setAcraReportingMode(value: String) {
+    override fun setReportingMode(value: String) {
         application.sharedPrefs().edit {
             // Set the ACRA disable value
             if (value == FEEDBACK_REPORT_NEVER) {
@@ -225,7 +223,7 @@ object CrashReportService {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun setDebugACRAConfig(prefs: SharedPreferences) {
         // Disable crash reporting
-        setAcraReportingMode(FEEDBACK_REPORT_NEVER)
+        setReportingMode(FEEDBACK_REPORT_NEVER)
         prefs.edit { putString(FEEDBACK_REPORT_KEY, FEEDBACK_REPORT_NEVER) }
         // Use a wider logcat filter in case crash reporting manually re-enabled
         logcatArgs = arrayOf("-t", "1500", "-v", "long", "ACRA:S")
@@ -240,7 +238,7 @@ object CrashReportService {
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun setProductionACRAConfig(prefs: SharedPreferences) {
         // Enable or disable crash reporting based on user setting
-        setAcraReportingMode(prefs.getString(FEEDBACK_REPORT_KEY, FEEDBACK_REPORT_ASK)!!)
+        setReportingMode(prefs.getString(FEEDBACK_REPORT_KEY, FEEDBACK_REPORT_ASK)!!)
     }
 
     private fun fetchWebViewInformation(): HashMap<String, String> {
@@ -262,17 +260,24 @@ object CrashReportService {
     }
 
     /** Used when we don't have an exception to throw, but we know something is wrong and want to diagnose it  */
-    fun sendExceptionReport(
+    override fun sendExceptionReport(
         message: String?,
         origin: String?,
     ) = sendExceptionReport(ManuallyReportedException(message), origin)
 
-    fun sendExceptionReport(
+    override fun sendExceptionReport(
         e: Throwable,
         origin: String?,
-        additionalInfo: String? = null,
-        onlyIfSilent: Boolean = false,
-        context: Context = application.applicationContext,
+        additionalInfo: String?,
+        onlyIfSilent: Boolean,
+    ) = sendExceptionReport(e, origin, additionalInfo, onlyIfSilent, application.applicationContext)
+
+    override fun sendExceptionReport(
+        e: Throwable,
+        origin: String?,
+        additionalInfo: String?,
+        onlyIfSilent: Boolean,
+        context: Context,
     ) {
         sendAnalyticsException(e, false)
         AnkiDroidApp.sentExceptionReportHack = true
@@ -297,7 +302,7 @@ object CrashReportService {
 
     fun isProperServiceProcess(): Boolean = ACRA.isACRASenderServiceProcess()
 
-    fun isAcraEnabled(
+    override fun isEnabled(
         context: Context,
         defaultValue: Boolean,
     ): Boolean {
@@ -314,7 +319,7 @@ object CrashReportService {
      *
      * @param context the context leading to the directory with ACRA limiter data
      */
-    fun deleteACRALimiterData(context: Context) {
+    override fun deleteLimiterData(context: Context) {
         try {
             LimiterData().store(context)
         } catch (e: Exception) {
@@ -322,13 +327,13 @@ object CrashReportService {
         }
     }
 
-    fun onPreferenceChanged(
+    override fun onPreferenceChanged(
         ctx: Context,
         newValue: String,
     ) {
-        setAcraReportingMode(newValue)
+        setReportingMode(newValue)
         // If the user changed error reporting, make sure future reports have a chance to post
-        deleteACRALimiterData(ctx)
+        deleteLimiterData(ctx)
         // We also need to re-chain our UncaughtExceptionHandlers
         UsageAnalytics.reInitialize()
         ThrowableFilterService.reInitialize()
@@ -338,7 +343,8 @@ object CrashReportService {
      * @return the status of the report, true if the report was sent, false if the report is already
      *  submitted
      */
-    fun sendReport(ankiActivity: AnkiActivity): Boolean {
+    override fun sendReport(activity: android.app.Activity): Boolean {
+        val ankiActivity = activity as AnkiActivity
         val preferences = ankiActivity.sharedPrefs()
         val reportMode = preferences.getString(FEEDBACK_REPORT_KEY, "")
         return if (FEEDBACK_REPORT_NEVER == reportMode) {
@@ -359,7 +365,7 @@ object CrashReportService {
         val currentTimestamp = TimeManager.time.intTimeMS()
         val lastReportTimestamp = getTimestampOfLastReport(activity)
         return if (currentTimestamp - lastReportTimestamp > MIN_INTERVAL_MS) {
-            deleteACRALimiterData(activity)
+            deleteLimiterData(activity)
             sendExceptionReport(
                 UserSubmittedException(EXCEPTION_MESSAGE),
                 "AnkiDroidApp.HelpDialog",
@@ -385,45 +391,23 @@ object CrashReportService {
 }
 
 /**
- * Runs the provided block, catching [Exception], logging it and reporting it to [CrashReportService]
- *
- * **Example**
- * ```
- * runCatchingWithReport("callingMethod", onlyIfSilent = true) {
- *     doSomethingRisky()
- * }
- * ```
- *
- * **Note**: This differs from [runCatching] - `Error` is thrown
- *
- * @param origin Data logged to Timber, and provided as the 'origin' field in the error report
- * @param onlyIfSilent Skip crash report if the crash reporting service is not 'always accept'
- * @param block Code to execute
- *
- * @throws Error If raised, this will be reported and rethrown
- *
- * @return A Result containing either the successful result of [block] or the [Exception] thrown
- */
-fun <T> runCatchingWithReport(
-    origin: String?,
-    onlyIfSilent: Boolean = false,
-    block: () -> T,
-): Result<T> =
-    try {
-        Result.success(block())
-    } catch (e: Throwable) {
-        Timber.w(e, origin)
-        CrashReportService.sendExceptionReport(e, origin, onlyIfSilent = onlyIfSilent)
-        if (e is Error) throw e
-        Result.failure(e)
-    }
-
-/**
- * Initializes ACRA crash reporting.
+ * Initializes ACRA crash reporting and wires it up as the
+ * global [CrashReportService] reporter.
  */
 context(application: Application)
 fun initializeAcraCrashReporter() {
-    CrashReportService.initialize(application)
+    AcraCrashReporter.initialize(application)
+    CrashReportService.setReporter(AcraCrashReporter)
 }
 
-fun isAcraSenderProcess(): Boolean = CrashReportService.isProperServiceProcess()
+fun isAcraSenderProcess(): Boolean = AcraCrashReporter.isProperServiceProcess()
+
+@VisibleForTesting(otherwise = VisibleForTesting.NONE)
+val CrashReportService.acraCoreConfigBuilder: CoreConfigurationBuilder
+    get() = AcraCrashReporter.acraCoreConfigBuilder
+
+@VisibleForTesting(otherwise = VisibleForTesting.NONE)
+fun setDebugACRAConfig(sharedPrefs: SharedPreferences) = AcraCrashReporter.setDebugACRAConfig(sharedPrefs)
+
+@VisibleForTesting(otherwise = VisibleForTesting.NONE)
+fun setProductionACRAConfig(sharedPrefs: SharedPreferences) = AcraCrashReporter.setProductionACRAConfig(sharedPrefs)
