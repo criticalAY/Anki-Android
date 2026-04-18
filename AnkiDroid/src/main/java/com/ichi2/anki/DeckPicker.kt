@@ -287,7 +287,7 @@ open class DeckPicker :
             }
         }
     override val baseSnackbarBuilder: SnackbarBuilder = {
-        anchorView = floatingActionButtonBinding.fabMain
+        anchorView = floatingActionButtonBinding.fabMain.takeIf { it.isVisible }
         addCallback(activeSnackbarCallback)
     }
 

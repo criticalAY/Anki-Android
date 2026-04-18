@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabaseCorruptException
 import android.os.Bundle
 import android.view.Menu
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.IntentCompat
@@ -32,6 +33,7 @@ import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.preferences.sharedPrefs
 import com.ichi2.anki.settings.Prefs
+import com.ichi2.anki.snackbar.showSnackbar
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity
 import com.ichi2.anki.ui.windows.permissions.PermissionsActivity.Companion.PERMISSIONS_SET_EXTRA
 import com.ichi2.anki.utils.Destination
@@ -641,6 +643,39 @@ class DeckPickerTest : RobolectricTest() {
             assertThat(getUndoTitle(), containsString("Update Note"))
             undo()
             assertThat(getUndoTitle(), containsString("Add Note"))
+        }
+
+    @Test
+    fun `baseSnackbarBuilder has no anchor when FAB is hidden`() =
+        deckPicker {
+            val fab = findViewById<View>(R.id.fab_main)
+            fab.visibility = View.GONE
+
+            val snackbar = showSnackbar("test")
+
+            snackbar?.let { baseSnackbarBuilder.invoke(it) }
+
+            assertThat(
+                "anchorView must be null when FAB is not visible",
+                snackbar?.anchorView,
+                nullValue(),
+            )
+        }
+
+    @Test
+    fun `baseSnackbarBuilder anchors to FAB when visible`() =
+        deckPicker {
+            val fab = findViewById<View>(R.id.fab_main)
+            fab.visibility = View.VISIBLE
+
+            val snackbar = showSnackbar("test")
+            snackbar?.let { baseSnackbarBuilder.invoke(it) }
+
+            assertThat(
+                "anchorView is the FAB when visible",
+                snackbar?.anchorView,
+                equalTo(fab),
+            )
         }
 
     @Test
