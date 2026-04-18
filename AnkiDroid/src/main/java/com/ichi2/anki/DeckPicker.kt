@@ -1124,6 +1124,7 @@ open class DeckPicker :
                     Timber.i("DeckPicker:: SearchItem opened")
                     // Hide the floating action button if it is visible
                     floatingActionMenu.hideFloatingActionButton()
+                    activeSnackBar?.anchorView = null
                     return true
                 }
 
@@ -1132,6 +1133,7 @@ open class DeckPicker :
                     Timber.i("DeckPicker:: SearchItem closed")
                     // Show the floating action button if it is hidden
                     floatingActionMenu.showFloatingActionButton()
+                    activeSnackBar?.anchorView = floatingActionButtonBinding.fabMain
                     return true
                 }
             },
@@ -1245,6 +1247,7 @@ open class DeckPicker :
             }
             R.id.action_sync -> {
                 Timber.i("DeckPicker:: Sync button pressed")
+                toolbarSearchItem?.collapseActionView()
                 val actionProvider = MenuItemCompat.getActionProvider(item) as? SyncActionProvider
                 if (actionProvider?.isProgressShown == true) {
                     launchCatchingTask {
