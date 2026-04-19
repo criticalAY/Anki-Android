@@ -364,7 +364,7 @@ fun AlertDialog.input(
             // handle validation errors
             val validationError = validator?.invoke(input)
             this@input.getInputTextLayout().error = validationError?.error
-            this@input.positiveButton.isEnabled = validationError == null
+            this@input.positiveButton.isEnabled = validationError?.error == null
             if (validationError != null) return@doOnTextChanged
 
             // no errors, see if we should fire the callback on every keypress
