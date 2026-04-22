@@ -124,11 +124,11 @@ import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.SelectableDeck
 import com.ichi2.anki.multimedia.AudioRecordingFragment
 import com.ichi2.anki.multimedia.AudioVideoFragment
-import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT
-import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT_FIELD_INDEX
 import com.ichi2.anki.multimedia.MultimediaActivityExtra
 import com.ichi2.anki.multimedia.MultimediaBottomSheet
 import com.ichi2.anki.multimedia.MultimediaImageFragment
+import com.ichi2.anki.multimedia.MultimediaResult
+import com.ichi2.anki.multimedia.MultimediaResultContract
 import com.ichi2.anki.multimedia.MultimediaUtils.createImageFile
 import com.ichi2.anki.multimedia.MultimediaViewModel
 import com.ichi2.anki.multimediacard.IMultimediaEditableNote
@@ -330,21 +330,19 @@ class NoteEditorFragment :
         )
 
     private val multimediaFragmentLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-            NoteEditorActivityResultCallback { result ->
-                if (result.resultCode == RESULT_CANCELED) {
+        registerForActivityResult(MultimediaResultContract()) { result ->
+            when (result) {
+                is MultimediaResult.Cancelled -> {
                     Timber.d("Multimedia result canceled")
-                    val index = result.data?.extras?.getInt(MULTIMEDIA_RESULT_FIELD_INDEX) ?: return@NoteEditorActivityResultCallback
-                    handleMultimediaActions(index)
-                    return@NoteEditorActivityResultCallback
+                    handleMultimediaActions(result.fieldIndex)
                 }
-
-                Timber.d("Getting multimedia result")
-                val extras = result.data?.extras ?: return@NoteEditorActivityResultCallback
-                handleMultimediaResult(extras)
-            },
-        )
+                is MultimediaResult.Success -> {
+                    Timber.d("Getting multimedia result")
+                    handleMultimediaResult(result)
+                }
+                null -> Timber.d("Multimedia launcher returned no result")
+            }
+        }
 
     private val requestTemplateEditLauncher =
         registerForActivityResult(
@@ -2134,15 +2132,11 @@ class NoteEditorFragment :
         multimediaFragmentLauncher.launch(imageIntent)
     }
 
-    private fun handleMultimediaResult(extras: Bundle) {
-        val index = extras.getInt(MULTIMEDIA_RESULT_FIELD_INDEX)
-        val field =
-            extras.getSerializableCompat<IField>(MULTIMEDIA_RESULT)
-                ?: return
-
+    private fun handleMultimediaResult(result: MultimediaResult.Success) {
+        val field = result.field
         // Process successful result only if field has data
         if (field.type != EFieldType.TEXT || field.mediaFile != null) {
-            performAddMedia(index, field, skipSizeCheck = false)
+            performAddMedia(result.fieldIndex, field, skipSizeCheck = false)
         } else {
             Timber.i("field imagePath and audioPath are both null")
         }

@@ -27,7 +27,6 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -43,8 +42,6 @@ import com.ichi2.anki.databinding.FragmentAudioVideoBinding
 import com.ichi2.anki.multimedia.AudioVideoFragment.MediaOption.AUDIO_CLIP
 import com.ichi2.anki.multimedia.AudioVideoFragment.MediaOption.VIDEO_CLIP
 import com.ichi2.anki.multimedia.MultimediaActivity.Companion.EXTRA_MEDIA_OPTIONS
-import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT
-import com.ichi2.anki.multimedia.MultimediaActivity.Companion.MULTIMEDIA_RESULT_FIELD_INDEX
 import com.ichi2.anki.multimedia.MultimediaUtils.createCachedFile
 import com.ichi2.anki.utils.ext.sharedPrefs
 import com.ichi2.utils.ExceptionUtil.executeSafe
@@ -71,12 +68,7 @@ class AudioVideoFragment : MultimediaFragment(R.layout.fragment_audio_video) {
                 result.resultCode != Activity.RESULT_OK || result.data == null -> {
                     Timber.d("Uri is empty or Result not OK")
                     if (viewModel.currentMultimediaUri.value == null) {
-                        val resultData =
-                            Intent().apply {
-                                putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
-                            }
-                        requireActivity().setResult(AppCompatActivity.RESULT_CANCELED, resultData)
-                        requireActivity().finish()
+                        setMultimediaResultAndFinish(MultimediaResult.Cancelled(indexValue))
                     }
                 }
                 else -> {
@@ -201,16 +193,8 @@ class AudioVideoFragment : MultimediaFragment(R.layout.fragment_audio_video) {
                 return@setOnClickListener
             }
             field.mediaFile = viewModel.currentMultimediaPath.value
-
             field.hasTemporaryMedia = true
-
-            val resultData =
-                Intent().apply {
-                    putExtra(MULTIMEDIA_RESULT, field)
-                    putExtra(MULTIMEDIA_RESULT_FIELD_INDEX, indexValue)
-                }
-            requireActivity().setResult(AppCompatActivity.RESULT_OK, resultData)
-            requireActivity().finish()
+            setMultimediaResultAndFinish(MultimediaResult.Success(indexValue, field))
         }
     }
 
