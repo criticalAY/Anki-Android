@@ -122,8 +122,7 @@ import com.ichi2.anki.libanki.Utils
 import com.ichi2.anki.libanki.clozeNumbersInNote
 import com.ichi2.anki.model.CardStateFilter
 import com.ichi2.anki.model.SelectableDeck
-import com.ichi2.anki.multimedia.AudioRecordingFragment
-import com.ichi2.anki.multimedia.AudioVideoFragment
+import com.ichi2.anki.multimedia.MultimediaActionHandler
 import com.ichi2.anki.multimedia.MultimediaActivityExtra
 import com.ichi2.anki.multimedia.MultimediaBottomSheet
 import com.ichi2.anki.multimedia.MultimediaImageFragment
@@ -132,11 +131,9 @@ import com.ichi2.anki.multimedia.MultimediaResultContract
 import com.ichi2.anki.multimedia.MultimediaUtils.createImageFile
 import com.ichi2.anki.multimedia.MultimediaViewModel
 import com.ichi2.anki.multimediacard.IMultimediaEditableNote
-import com.ichi2.anki.multimediacard.fields.AudioRecordingField
 import com.ichi2.anki.multimediacard.fields.EFieldType
 import com.ichi2.anki.multimediacard.fields.IField
 import com.ichi2.anki.multimediacard.fields.ImageField
-import com.ichi2.anki.multimediacard.fields.MediaClipField
 import com.ichi2.anki.multimediacard.impl.MultimediaEditableNote
 import com.ichi2.anki.noteeditor.CustomToolbarButton
 import com.ichi2.anki.noteeditor.FieldState
@@ -2030,85 +2027,15 @@ class NoteEditorFragment :
                 if (note.isEmpty) return@launch
 
                 multimediaViewModel.multimediaAction.first { action ->
-                    when (action) {
-                        MultimediaBottomSheet.MultimediaAction.SELECT_IMAGE_FILE -> {
-                            Timber.i("Selected Image option")
-                            val field = ImageField()
-                            note.setField(fieldIndex, field)
-                            openMultimediaImageFragment(fieldIndex = fieldIndex, field, note)
-                        }
-
-                        MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_FILE -> {
-                            Timber.i("Selected audio clip option")
-                            val field = MediaClipField()
-                            note.setField(fieldIndex, field)
-                            val mediaIntent =
-                                AudioVideoFragment.getIntent(
-                                    requireContext(),
-                                    MultimediaActivityExtra(fieldIndex, field, note),
-                                    AudioVideoFragment.MediaOption.AUDIO_CLIP,
-                                )
-
-                            multimediaFragmentLauncher.launch(mediaIntent)
-                        }
-
-                        MultimediaBottomSheet.MultimediaAction.OPEN_DRAWING -> {
-                            Timber.i("Selected Drawing option")
-                            val field = ImageField()
-                            note.setField(fieldIndex, field)
-
-                            val drawingIntent =
-                                MultimediaImageFragment.getIntent(
-                                    requireContext(),
-                                    MultimediaActivityExtra(fieldIndex, field, note),
-                                    MultimediaImageFragment.ImageOptions.DRAWING,
-                                )
-
-                            multimediaFragmentLauncher.launch(drawingIntent)
-                        }
-
-                        MultimediaBottomSheet.MultimediaAction.SELECT_AUDIO_RECORDING -> {
-                            Timber.i("Selected audio recording option")
-                            val field = AudioRecordingField()
-                            note.setField(fieldIndex, field)
-                            val audioRecordingIntent =
-                                AudioRecordingFragment.getIntent(
-                                    requireContext(),
-                                    MultimediaActivityExtra(fieldIndex, field, note),
-                                )
-
-                            multimediaFragmentLauncher.launch(audioRecordingIntent)
-                        }
-
-                        MultimediaBottomSheet.MultimediaAction.SELECT_VIDEO_FILE -> {
-                            Timber.i("Selected video clip option")
-                            val field = MediaClipField()
-                            note.setField(fieldIndex, field)
-                            val mediaIntent =
-                                AudioVideoFragment.getIntent(
-                                    requireContext(),
-                                    MultimediaActivityExtra(fieldIndex, field, note),
-                                    AudioVideoFragment.MediaOption.VIDEO_CLIP,
-                                )
-
-                            multimediaFragmentLauncher.launch(mediaIntent)
-                        }
-
-                        MultimediaBottomSheet.MultimediaAction.OPEN_CAMERA -> {
-                            Timber.i("Selected Camera option")
-
-                            val field = ImageField()
-                            note.setField(fieldIndex, field)
-                            val imageIntent =
-                                MultimediaImageFragment.getIntent(
-                                    requireContext(),
-                                    MultimediaActivityExtra(fieldIndex, field, note),
-                                    MultimediaImageFragment.ImageOptions.CAMERA,
-                                )
-
-                            multimediaFragmentLauncher.launch(imageIntent)
-                        }
-                    }
+                    Timber.i("Selected multimedia action: %s", action)
+                    val handler = MultimediaActionHandler.forAction(action)
+                    val field = handler.createField().also { note.setField(fieldIndex, it) }
+                    val intent =
+                        handler.buildIntent(
+                            requireContext(),
+                            MultimediaActivityExtra(fieldIndex, field, note),
+                        )
+                    multimediaFragmentLauncher.launch(intent)
                     true
                 }
             }
