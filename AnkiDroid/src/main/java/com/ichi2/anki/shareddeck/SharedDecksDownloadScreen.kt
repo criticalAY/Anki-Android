@@ -7,6 +7,9 @@ package com.ichi2.anki.shareddeck
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -255,12 +258,22 @@ private fun CircularProgressSection(
     sizeRangeText: String,
     modifier: Modifier = Modifier,
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = (percent / 100f).coerceIn(0f, 1f),
+        animationSpec =
+            SpringSpec(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        label = "DownloadProgress",
+    )
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = { (percent / 100f).coerceIn(0f, 1f) },
+            progress = { animatedProgress },
             modifier = Modifier.size(ProgressRingSize),
             strokeWidth = ProgressRingStroke,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
