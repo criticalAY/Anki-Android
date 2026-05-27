@@ -7,6 +7,16 @@ package com.ichi2.anki.shareddeck
 import android.text.format.DateUtils
 import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.SpringSpec
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -255,12 +265,22 @@ private fun CircularProgressSection(
     sizeRangeText: String,
     modifier: Modifier = Modifier,
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = (percent / 100f).coerceIn(0f, 1f),
+        animationSpec =
+            SpringSpec(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        label = "DownloadProgress",
+    )
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = { (percent / 100f).coerceIn(0f, 1f) },
+            progress = { animatedProgress },
             modifier = Modifier.size(ProgressRingSize),
             strokeWidth = ProgressRingStroke,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -306,30 +326,47 @@ private fun PercentageText(
     percent: Float,
     modifier: Modifier = Modifier,
 ) {
-    val displayText = remember(percent) { formatPercent(percent) }
     val baseStyle = MaterialTheme.typography.displayLarge
-    val annotated =
-        remember(displayText, baseStyle.fontSize) {
-            buildAnnotatedString {
-                append(displayText)
-                val firstPercent = displayText.indexOf('%')
-                if (firstPercent >= 0) {
-                    addStyle(
-                        SpanStyle(fontSize = baseStyle.fontSize * 0.6f),
-                        firstPercent,
-                        firstPercent + 1,
-                    )
+
+    AnimatedContent(targetState = percent, label = "PercentTextAnimation", transitionSpec = {
+        (
+            fadeIn(animationSpec = tween(220)) +
+                scaleIn(
+                    initialScale = 0.92f,
+                    animationSpec = tween(220),
+                )
+        ).togetherWith(
+            fadeOut(animationSpec = tween(180)) +
+                scaleOut(
+                    targetScale = 0.92f,
+                    animationSpec = tween(180),
+                ),
+        )
+    }) { targetPercent ->
+        val displayText = remember(targetPercent) { formatPercent(targetPercent) }
+        val annotated =
+            remember(displayText, baseStyle.fontSize) {
+                buildAnnotatedString {
+                    append(displayText)
+                    val firstPercent = displayText.indexOf('%')
+                    if (firstPercent >= 0) {
+                        addStyle(
+                            SpanStyle(fontSize = baseStyle.fontSize * 0.6f),
+                            firstPercent,
+                            firstPercent + 1,
+                        )
+                    }
                 }
             }
-        }
-    Text(
-        text = annotated,
-        style = baseStyle,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurface,
-        textAlign = TextAlign.Center,
-        modifier = modifier,
-    )
+        Text(
+            text = annotated,
+            style = baseStyle,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = modifier,
+        )
+    }
 }
 
 private fun formatPercent(percent: Float): String {
