@@ -17,8 +17,10 @@
 package com.ichi2.anki.ui.windows.reviewer.whiteboard
 
 import android.content.Context
+import android.graphics.Color
 import android.os.Build
 import android.view.Choreographer
+import android.view.MotionEvent
 import android.widget.FrameLayout
 import androidx.annotation.ColorInt
 import androidx.core.view.updateLayoutParams
@@ -31,6 +33,7 @@ import com.ichi2.utils.show
 import com.skydoves.colorpickerview.AlphaTileView
 import com.skydoves.colorpickerview.ColorEnvelope
 import com.skydoves.colorpickerview.ColorPickerDialog
+import com.skydoves.colorpickerview.ColorPickerView
 import com.skydoves.colorpickerview.flag.FlagView
 import com.skydoves.colorpickerview.listeners.ColorEnvelopeListener
 import com.skydoves.colorpickerview.sliders.AlphaSlideBar
@@ -62,6 +65,7 @@ fun Context.showColorPickerDialog(
             // the initial color. Calling it too early causes the slider to use its
             // default position, resulting in an incorrect displayed color.
             colorPickerView.post { colorPickerView.setInitialColor(initialColor) }
+            colorPickerView.restoreBrightnessOnHueSelection()
             // Bubble showing the selected color
             val bubbleFlag = BubbleFlag(this@showColorPickerDialog)
             colorPickerView.flagView = bubbleFlag
@@ -106,6 +110,35 @@ fun Context.showColorPickerDialog(
             choreographer.postFrameCallback(callback)
         }.setOnDismissListener { dismissed = true }
 }
+
+/**
+ * Restores full brightness when the user starts picking a hue while the current color is near black.
+ *
+ * The wheel only controls hue and saturation; brightness comes from the slider below it.
+ * A dark initial color parks that slider near zero, so every wheel selection assembled
+ * back to near black and the picker appeared to ignore the chosen color (issue #21329).
+ */
+private fun ColorPickerView.restoreBrightnessOnHueSelection() {
+    setOnTouchListener { _, event ->
+        if (event.actionMasked == MotionEvent.ACTION_DOWN && color.isNearBlack()) {
+            brightnessSlider?.setSelectorByHalfSelectorPosition(1f)
+        }
+        false
+    }
+}
+
+/**
+ * Whether the color's brightness is low enough to read as black. The brightness slider stores
+ * exactly this value, so a near-black color means the slider is parked near zero.
+ */
+private fun Int.isNearBlack(): Boolean {
+    val hsv = FloatArray(3)
+    Color.colorToHSV(this, hsv)
+    return hsv[2] <= NEAR_BLACK_BRIGHTNESS
+}
+
+/** Brightness (HSV value) at or below which a color is treated as black. */
+private const val NEAR_BLACK_BRIGHTNESS = 0.05f
 
 /**
  * Custom flag view that displays the selected color in a bubble above the color picker selector.
