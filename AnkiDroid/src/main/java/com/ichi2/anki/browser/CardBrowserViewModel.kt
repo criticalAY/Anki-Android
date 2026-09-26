@@ -150,6 +150,9 @@ class CardBrowserViewModel(
             onBufferOverflow = BufferOverflow.DROP_OLDEST,
         )
 
+    val flowOfLastCompletedSearch: StateFlow<SearchState.Completed?>
+        field = MutableStateFlow<SearchState.Completed?>(null)
+
     /**
      * Commands to drive the note editor either in a fragment or a standalone activity
      * @see NoteEditorCommand
@@ -1407,7 +1410,9 @@ class CardBrowserViewModel(
                     this@CardBrowserViewModel.cards.replaceWith(cardsOrNotes, cards)
                     ensurePaneRowValid()
                     if (isFragmented) flowOfNoteEditorCommand.emit(NoteEditorCommand.fromCurrentSearchState())
-                    flowOfSearchState.emit(SearchState.Completed.fromCurrentState(fromUserSearch))
+                    val completed = SearchState.Completed.fromCurrentState(fromUserSearch)
+                    flowOfLastCompletedSearch.value = completed
+                    flowOfSearchState.emit(completed)
                     selectUnvalidatedRowIds(pendingSelectionRestore)
                     pendingSelectionRestore = emptyList()
                 }
