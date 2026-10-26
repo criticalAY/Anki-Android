@@ -86,7 +86,7 @@ class PreferencesFragment :
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View =
-        inflater.inflate(if (settingsIsSplit) R.layout.fragment_preferences_split else R.layout.fragment_preferences, container, false)
+        inflater.inflate(if (settingsIsSplit) R.layout.fragment_preferences else R.layout.fragment_preferences_one_pane, container, false)
 
     override fun onViewCreated(
         view: View,
