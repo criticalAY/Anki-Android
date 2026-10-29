@@ -25,6 +25,7 @@ import anki.collection.Progress
 import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.CrashReportData.Companion.throwIfDialogUnusable
 import com.ichi2.anki.CrashReportData.Companion.toCrashReportData
+import com.ichi2.anki.ankicommon.BuildConfig
 import com.ichi2.anki.backend.DatabaseCorruption
 import com.ichi2.anki.common.android.AnkiBroadcastReceiver
 import com.ichi2.anki.common.annotations.UseContextParameter
@@ -355,7 +356,7 @@ fun Context.showError(
     }
 }
 
-/** In most cases, you'll want [AnkiActivity.withProgress]
+/** In most cases, you'll want [FragmentActivity.withProgress]
  * instead. This lower-level routine can be used to integrate your own
  * progress UI.
  */
@@ -847,7 +848,7 @@ data class CrashReportData(
             }
 
         @VisibleForTesting
-        internal fun Throwable.isDeckNotFoundInLimitsMapException(): Boolean =
+        fun Throwable.isDeckNotFoundInLimitsMapException(): Boolean =
             this is BackendInvalidInputException && message == "deck not found in limits map"
     }
 }
