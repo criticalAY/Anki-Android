@@ -104,6 +104,34 @@ class ProfileManagerTest {
     }
 
     @Test
+    fun `a profile that fails to load is reported by name once`() {
+        registerUnloadableProfile()
+
+        assertNull(ProfileManager.createOrNull(context))
+
+        assertEquals(ProfileManager.LoadFailure(profileName = "Work", defaultProfileName = "Home"), ProfileManager.consumeLoadFailure())
+        assertNull(ProfileManager.consumeLoadFailure(), "reported once per start")
+    }
+
+    @Test
+    fun `choosing Default after a failed load opens Default on the next start`() {
+        registerUnloadableProfile()
+        ProfileManager.createOrNull(context)
+
+        ProfileManager.selectDefaultProfile(context)
+
+        assertEquals(ProfileId.DEFAULT, ProfileManager.createOrNull(context)?.activeProfileContext?.profileId)
+    }
+
+    private fun registerUnloadableProfile() {
+        val manager = ProfileManager.create(context)
+        manager.renameProfile(ProfileId.DEFAULT, ProfileName.fromTrustedSource("Home"))
+        val work = manager.createNewProfile(ProfileName.fromTrustedSource("Work"))
+        File(appDataRoot, work.value).writeText("a file where the profile folder belongs")
+        prefs.edit(commit = true) { putString(PREF_LAST_ACTIVE_PROFILE_ID, work.value) }
+    }
+
+    @Test
     fun `create works before the application context is available`() {
         val duringAttachBaseContext =
             object : ContextWrapper(context) {

@@ -170,6 +170,7 @@ import com.ichi2.anki.introduction.hasCollectionStoragePermissions
 import com.ichi2.anki.libanki.DeckId
 import com.ichi2.anki.libanki.sched.DeckNode
 import com.ichi2.anki.mediacheck.MediaCheckFragment
+import com.ichi2.anki.multiprofile.ProfileManager
 import com.ichi2.anki.observability.ChangeManager
 import com.ichi2.anki.pages.AnkiPackageImporterFragment
 import com.ichi2.anki.progress.observeProgress
@@ -222,6 +223,7 @@ import com.ichi2.utils.configureView
 import com.ichi2.utils.customView
 import com.ichi2.utils.isRtl
 import com.ichi2.utils.message
+import com.ichi2.utils.neutralButton
 import com.ichi2.utils.positiveButton
 import com.ichi2.utils.show
 import com.ichi2.utils.showDialogIfWebViewOutdated
@@ -1917,6 +1919,18 @@ open class DeckPicker :
         }
     }
 
+    private fun showProfileLoadFailure() {
+        val failure = ProfileManager.consumeLoadFailure() ?: return
+        AlertDialog.Builder(this).show {
+            title(text = getString(CommonString.profile_load_failed_title, failure.profileName))
+            message(text = getString(CommonString.profile_load_failed_message, failure.defaultProfileName, failure.profileName))
+            positiveButton(CommonString.dialog_ok)
+            neutralButton(text = getString(CommonString.profile_load_failed_use_default, failure.defaultProfileName)) {
+                ProfileManager.selectDefaultProfile(applicationContext)
+            }
+        }
+    }
+
     private fun showCollectionErrorDialog() {
         dialogHandler.sendMessage(CollectionLoadingErrorDialog().toMessage())
     }
@@ -1931,6 +1945,7 @@ open class DeckPicker :
         preferences: SharedPreferences,
         skip: Int,
     ) {
+        showProfileLoadFailure()
         if (!BackupManager.enoughDiscSpace(CollectionHelper.getCurrentAnkiDroidDirectory(this))) {
             Timber.i("Not enough space to do backup")
             showDialogFragment(DeckPickerNoSpaceLeftDialog.newInstance())
