@@ -62,6 +62,7 @@ import com.ichi2.anki.dialogs.ConversionType.REGULAR_TO_REGULAR
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.NoteId
 import com.ichi2.anki.libanki.NoteTypeId
+import com.ichi2.anki.progress.observeProgress
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.showError
 import com.ichi2.anki.snackbar.showSnackbar
@@ -70,7 +71,6 @@ import com.ichi2.anki.ui.BasicItemSelectedListener
 import com.ichi2.anki.ui.internationalization.sentenceCase
 import com.ichi2.anki.utils.InitStatus
 import com.ichi2.anki.utils.ext.launchCollectionInLifecycleScope
-import com.ichi2.anki.withProgress
 import com.ichi2.themes.Themes
 import com.ichi2.utils.LanguageUtil
 import com.ichi2.utils.boldList
@@ -105,6 +105,7 @@ class ChangeNoteTypeDialog : AnalyticsDialogFragment(R.layout.dialog_change_note
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, R.style.ThemeOverlay_AnkiDroid_AlertDialog_FullScreen)
         setupFlows()
+        observeProgress(viewModel) { it }
     }
 
     override fun onViewCreated(
@@ -701,10 +702,7 @@ private fun createMappingRow(
 private fun AnkiActivity.changeNoteType(viewModel: ChangeNoteTypeViewModel) =
     this.launchCatchingRequiringOneWaySync {
         try {
-            val notesUpdated =
-                withProgress {
-                    viewModel.executeChangeNoteTypeAsync().await()
-                }
+            val notesUpdated = viewModel.executeChangeNoteTypeAsync().await()
             val message = TR.browsingNotesUpdated(notesUpdated)
             showSnackbar(message, Snackbar.LENGTH_SHORT)
         } catch (ex: ChangeNoteTypeException) {

@@ -21,6 +21,8 @@ import com.ichi2.anki.libanki.NoteTypeId
 import com.ichi2.anki.libanki.NotetypeJson
 import com.ichi2.anki.libanki.exception.ConfirmModSchemaException
 import com.ichi2.anki.observability.undoableOp
+import com.ichi2.anki.progress.HasProgress
+import com.ichi2.anki.progress.ProgressManager
 import com.ichi2.anki.utils.InitStatus
 import com.ichi2.anki.utils.ViewModelDelayedInitializer
 import com.ichi2.anki.utils.ext.require
@@ -99,7 +101,10 @@ private typealias TemplateChangeMap = Map<TemplateIndex, TemplateIndex?>
 class ChangeNoteTypeViewModel(
     private val stateHandle: SavedStateHandle,
 ) : ViewModel(),
-    ViewModelDelayedInitializer {
+    ViewModelDelayedInitializer,
+    HasProgress<Nothing> {
+    override val progressManager = ProgressManager<Nothing>()
+
     /**
      * IDs of notes to be modified
      *
@@ -328,24 +333,26 @@ class ChangeNoteTypeViewModel(
     @NeedsTest("one way sync")
     fun executeChangeNoteTypeAsync() =
         viewModelScope.async {
-            Timber.d("Changing note type from '%s' to '%s'", inputNoteType.name, outputNoteType.name)
-            Timber.d("Field map: %s", fieldChangeMap)
-            Timber.d("Card map: %s", templateChangeMap)
+            progressManager.withProgress {
+                Timber.d("Changing note type from '%s' to '%s'", inputNoteType.name, outputNoteType.name)
+                Timber.d("Field map: %s", fieldChangeMap)
+                Timber.d("Card map: %s", templateChangeMap)
 
-            val changes =
-                changeNoteTypeOfNotes(
-                    noteIds = noteIds,
-                    sourceId = inputNoteType.id,
-                    targetId = outputNoteType.id,
-                    fieldMap = fieldChangeMap,
-                    templateMap = templateChangeMap,
-                )
+                val changes =
+                    changeNoteTypeOfNotes(
+                        noteIds = noteIds,
+                        sourceId = inputNoteType.id,
+                        targetId = outputNoteType.id,
+                        fieldMap = fieldChangeMap,
+                        templateMap = templateChangeMap,
+                    )
 
-            undoableOp { changes }
+                undoableOp { changes }
 
-            closeDialogFlow.emit(Unit)
+                closeDialogFlow.emit(Unit)
 
-            return@async noteIds.size
+                return@withProgress noteIds.size
+            }
         }
 
     /**

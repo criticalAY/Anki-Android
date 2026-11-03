@@ -12,14 +12,20 @@ import com.ichi2.anki.dialogs.ChangeNoteTypeViewModelTest.Launch.Regular
 import com.ichi2.anki.dialogs.SelectedIndex.NOTHING
 import com.ichi2.anki.libanki.NoteId
 import com.ichi2.anki.libanki.NotetypeJson
+import com.ichi2.anki.progress.ViewModelProgress
 import com.ichi2.testutils.JvmTest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.setMain
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 
 class ChangeNoteTypeViewModelTest : JvmTest() {
@@ -59,6 +65,24 @@ class ChangeNoteTypeViewModelTest : JvmTest() {
                 // assert that the flow emitted unit after execution
                 assertThat(awaitItem(), equalTo(Unit))
                 cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `changing the note type reports progress`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val viewModel = buildViewModel(noteIds = Regular().setup())
+            advanceUntilIdle()
+            viewModel.setOutputNoteType(col.notetypes.byName("Basic (optional reversed card)")!!)
+
+            viewModel.progressManager.progress.test {
+                assertIs<ViewModelProgress.Idle>(awaitItem())
+                val notesUpdated = viewModel.executeChangeNoteTypeAsync()
+                assertIs<ViewModelProgress.Active<Nothing>>(awaitItem())
+                assertThat(notesUpdated.await(), equalTo(1))
+                assertIs<ViewModelProgress.Idle>(awaitItem())
+                expectNoEvents()
             }
         }
 

@@ -10,18 +10,32 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.widget.Spinner
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.testing.launchFragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.viewpager2.widget.ViewPager2
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
 import com.ichi2.anki.dialogs.ChangeNoteTypeDialog.Companion.ARG_NOTE_IDS
 import com.ichi2.anki.libanki.NoteId
+import com.ichi2.anki.progress.ViewModelProgress
+import com.ichi2.anki.utils.ext.showDialogFragment
+import com.ichi2.testutils.EmptyAnkiActivity
+import com.ichi2.testutils.withCollectionAccessOn
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import kotlin.coroutines.CoroutineContext
 import com.ichi2.anki.common.android.R as CommonR
 
 @RunWith(AndroidJUnit4::class)
@@ -69,6 +83,75 @@ class ChangeNoteTypeDialogTest : RobolectricTest() {
             assertThat("shown for regular -> regular", container.visibility, equalTo(View.VISIBLE))
             assertThat("one spinner per output template", container.childCount, equalTo(2))
         }
+
+    @Test
+    fun `a loading dialog shows while the note type is changing`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            val dialog = showChangeNoteTypeDialog(note.id)
+            val fragmentManager = dialog.parentFragmentManager
+            val viewModel = dialog.swapFields()
+            val queue = HeldCollectionQueue()
+
+            withCollectionAccessOn(queue) {
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                queue.runUntilChanging(viewModel)
+                advanceUntilIdle()
+                advanceRobolectricLooper()
+                assertThat("loading dialog is shown", fragmentManager.loadingDialogCount(), equalTo(1))
+
+                queue.runAll()
+            }
+            advanceUntilIdle()
+            advanceRobolectricLooper()
+
+            assertThat("loading dialog is dismissed", fragmentManager.loadingDialogCount(), equalTo(0))
+            assertThat("dialog is closed", dialog.isAdded, equalTo(false))
+            assertThat("fields are swapped", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    private class HeldCollectionQueue : CoroutineDispatcher() {
+        val pending = ArrayDeque<Runnable>()
+
+        override fun dispatch(
+            context: CoroutineContext,
+            block: Runnable,
+        ) {
+            pending.addLast(block)
+        }
+    }
+
+    private fun HeldCollectionQueue.runUntilChanging(viewModel: ChangeNoteTypeViewModel) {
+        while (viewModel.progressManager.progress.value !is ViewModelProgress.Active) {
+            pending.removeFirst().run()
+            advanceRobolectricLooper()
+        }
+    }
+
+    private fun HeldCollectionQueue.runAll() {
+        while (pending.isNotEmpty()) {
+            pending.removeFirst().run()
+        }
+    }
+
+    private fun FragmentManager.loadingDialogCount() = fragments.count { it is LoadingDialogFragment }
+
+    private fun showChangeNoteTypeDialog(noteId: NoteId): ChangeNoteTypeDialog {
+        val activity = startRegularActivity<EmptyAnkiActivity>()
+        activity.setContentView(CoordinatorLayout(activity).apply { id = R.id.root_layout })
+        val dialog = ChangeNoteTypeDialog.newInstance(listOf(noteId))
+        activity.showDialogFragment(dialog)
+        shadowOf(getMainLooper()).idle()
+        return dialog
+    }
+
+    private suspend fun ChangeNoteTypeDialog.swapFields(): ChangeNoteTypeViewModel {
+        val viewModel = ViewModelProvider(this)[ChangeNoteTypeViewModel::class.java]
+        viewModel.updateFieldMapping(0, SelectedIndex.from(1)).join()
+        viewModel.updateFieldMapping(1, SelectedIndex.from(0)).join()
+        shadowOf(getMainLooper()).idle()
+        return viewModel
+    }
 
     /** The template mapping rows, which only apply to a regular -> regular conversion */
     private fun ChangeNoteTypeDialog.templatesContainer(): ViewGroup {
