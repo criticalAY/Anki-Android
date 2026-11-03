@@ -10,7 +10,9 @@ import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
+import android.widget.ImageButton
 import android.widget.Spinner
+import androidx.activity.ComponentDialog
 import androidx.appcompat.app.AlertDialog
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.FragmentManager
@@ -21,6 +23,8 @@ import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
+import androidx.test.espresso.matcher.ViewMatchers.isDescendantOfA
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,6 +40,7 @@ import com.ichi2.testutils.withCollectionAccessOn
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -195,6 +200,68 @@ class ChangeNoteTypeDialogTest : RobolectricTest() {
             advanceUntilIdle()
 
             assertThat("fields are swapped once", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    @Test
+    fun `back while the note type is changing does not close the dialog`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            val dialog = showChangeNoteTypeDialog(note.id)
+            dialog.swapFields()
+
+            withCollectionAccessOn(StandardTestDispatcher(testScheduler)) {
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                (dialog.requireDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+                shadowOf(getMainLooper()).idle()
+                assertThat("dialog is open", dialog.isAdded, equalTo(true))
+            }
+            advanceUntilIdle()
+
+            assertThat("fields are swapped", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    @Test
+    fun `closing while the note type is changing does not close the dialog`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            val dialog = showChangeNoteTypeDialog(note.id)
+            dialog.swapFields()
+
+            withCollectionAccessOn(StandardTestDispatcher(testScheduler)) {
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                onView(allOf(isDescendantOfA(withId(R.id.toolbar)), isAssignableFrom(ImageButton::class.java)))
+                    .inRoot(isDialog())
+                    .perform(click())
+                shadowOf(getMainLooper()).idle()
+                assertThat("dialog is open", dialog.isAdded, equalTo(true))
+            }
+            advanceUntilIdle()
+
+            assertThat("fields are swapped", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    @Test
+    fun `back closes the dialog when the note type is not changing`() =
+        runTest {
+            val dialog = showChangeNoteTypeDialog(addBasicNote().id)
+
+            (dialog.requireDialog() as ComponentDialog).onBackPressedDispatcher.onBackPressed()
+            advanceRobolectricLooper()
+
+            assertThat("dialog is closed", dialog.isAdded, equalTo(false))
+        }
+
+    @Test
+    fun `the close button closes the dialog when the note type is not changing`() =
+        runTest {
+            val dialog = showChangeNoteTypeDialog(addBasicNote().id)
+
+            onView(allOf(isDescendantOfA(withId(R.id.toolbar)), isAssignableFrom(ImageButton::class.java)))
+                .inRoot(isDialog())
+                .perform(click())
+            advanceRobolectricLooper()
+
+            assertThat("dialog is closed", dialog.isAdded, equalTo(false))
         }
 
     private class HeldCollectionQueue : CoroutineDispatcher() {

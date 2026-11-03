@@ -20,6 +20,8 @@ import android.widget.ArrayAdapter
 import android.widget.CheckedTextView
 import android.widget.LinearLayout
 import android.widget.Spinner
+import androidx.activity.ComponentDialog
+import androidx.activity.addCallback
 import androidx.annotation.CheckResult
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
@@ -121,7 +123,16 @@ class ChangeNoteTypeDialog : AnalyticsDialogFragment(R.layout.dialog_change_note
         setupEdgeToEdge(binding)
 
         binding.toolbar.title = TR.sentenceCase.changeNoteType
-        binding.toolbar.setNavigationOnClickListener { dismiss() }
+        binding.toolbar.setNavigationOnClickListener {
+            if (isInputIgnored()) return@setNavigationOnClickListener
+            dismiss()
+        }
+        val backDispatcher = (requireDialog() as ComponentDialog).onBackPressedDispatcher
+        backDispatcher.addCallback(viewLifecycleOwner) {
+            if (isInputIgnored()) return@addCallback
+            isEnabled = false
+            backDispatcher.onBackPressed()
+        }
         binding.btnSave.setOnClickListener {
             if (isInputIgnored()) return@setOnClickListener
             changeNoteTypeJob = requireAnkiActivity().changeNoteType(viewModel)
