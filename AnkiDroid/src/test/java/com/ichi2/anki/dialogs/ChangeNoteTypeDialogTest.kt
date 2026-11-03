@@ -4,20 +4,24 @@
 package com.ichi2.anki.dialogs
 
 import android.content.Context
+import android.content.DialogInterface
 import android.os.Bundle
 import android.os.Looper.getMainLooper
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.widget.Spinner
+import androidx.appcompat.app.AlertDialog
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.testing.launchFragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.viewpager2.widget.ViewPager2
@@ -30,11 +34,13 @@ import com.ichi2.anki.utils.ext.showDialogFragment
 import com.ichi2.testutils.EmptyAnkiActivity
 import com.ichi2.testutils.withCollectionAccessOn
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowDialog
 import kotlin.coroutines.CoroutineContext
 import com.ichi2.anki.common.android.R as CommonR
 
@@ -110,6 +116,87 @@ class ChangeNoteTypeDialogTest : RobolectricTest() {
             assertThat("fields are swapped", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
         }
 
+    @Test
+    fun `tapping Save twice changes the note type once`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            showChangeNoteTypeDialog(note.id).swapFields()
+            onView(withId(R.id.btn_save)).inRoot(isDialog()).check(matches(isEnabled()))
+
+            withCollectionAccessOn(StandardTestDispatcher(testScheduler)) {
+                repeat(2) {
+                    onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                }
+            }
+            advanceUntilIdle()
+
+            assertThat("fields are swapped once", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    @Test
+    fun `tapping Save after accepting a one-way sync changes the note type once`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            col.db.execute("update col set ls = scm")
+            showChangeNoteTypeDialog(note.id).swapFields()
+            onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+            advanceUntilIdle()
+            val oneWaySyncPrompt = ShadowDialog.getLatestDialog() as AlertDialog
+
+            withCollectionAccessOn(StandardTestDispatcher(testScheduler)) {
+                oneWaySyncPrompt.getButton(DialogInterface.BUTTON_POSITIVE).performClick()
+                shadowOf(getMainLooper()).idle()
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+            }
+            advanceUntilIdle()
+
+            assertThat("fields are swapped once", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
+    @Test
+    fun `Save asks for a one-way sync again after it is declined`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            col.db.execute("update col set ls = scm")
+            showChangeNoteTypeDialog(note.id).swapFields()
+            onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+            advanceUntilIdle()
+            val declinedPrompt = ShadowDialog.getLatestDialog() as AlertDialog
+            declinedPrompt.getButton(DialogInterface.BUTTON_NEGATIVE).performClick()
+            advanceRobolectricLooper()
+
+            onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+            advanceUntilIdle()
+
+            val latestDialog = ShadowDialog.getLatestDialog()
+            assertThat("a new prompt is shown", latestDialog is AlertDialog && latestDialog !== declinedPrompt, equalTo(true))
+            assertThat("the prompt is showing", latestDialog.isShowing, equalTo(true))
+            assertThat("fields are unchanged", col.getNote(note.id).fields, equalTo(listOf("Hello", "World")))
+        }
+
+    @Test
+    fun `tapping Save in a recreated dialog while the note type is changing changes it once`() =
+        runTest {
+            val note = addBasicNote("Hello", "World")
+            val controller = startActivityControllerNormallyOpenCollectionWithIntent(EmptyAnkiActivity::class.java, null)
+            val viewModel = showChangeNoteTypeDialog(note.id, controller.get()).swapFields()
+            val queue = HeldCollectionQueue()
+
+            withCollectionAccessOn(queue) {
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                queue.runUntilChanging(viewModel)
+                controller.recreate()
+                controller.get().setContentView(CoordinatorLayout(controller.get()).apply { id = R.id.root_layout })
+                advanceRobolectricLooper()
+
+                onView(withId(R.id.btn_save)).inRoot(isDialog()).perform(click())
+                queue.runAll()
+            }
+            advanceUntilIdle()
+
+            assertThat("fields are swapped once", col.getNote(note.id).fields, equalTo(listOf("World", "Hello")))
+        }
+
     private class HeldCollectionQueue : CoroutineDispatcher() {
         val pending = ArrayDeque<Runnable>()
 
@@ -136,8 +223,10 @@ class ChangeNoteTypeDialogTest : RobolectricTest() {
 
     private fun FragmentManager.loadingDialogCount() = fragments.count { it is LoadingDialogFragment }
 
-    private fun showChangeNoteTypeDialog(noteId: NoteId): ChangeNoteTypeDialog {
-        val activity = startRegularActivity<EmptyAnkiActivity>()
+    private fun showChangeNoteTypeDialog(
+        noteId: NoteId,
+        activity: EmptyAnkiActivity = startRegularActivity(),
+    ): ChangeNoteTypeDialog {
         activity.setContentView(CoordinatorLayout(activity).apply { id = R.id.root_layout })
         val dialog = ChangeNoteTypeDialog.newInstance(listOf(noteId))
         activity.showDialogFragment(dialog)

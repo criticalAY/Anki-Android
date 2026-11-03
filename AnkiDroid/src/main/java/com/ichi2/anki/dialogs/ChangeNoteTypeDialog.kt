@@ -62,6 +62,7 @@ import com.ichi2.anki.dialogs.ConversionType.REGULAR_TO_REGULAR
 import com.ichi2.anki.launchCatchingTask
 import com.ichi2.anki.libanki.NoteId
 import com.ichi2.anki.libanki.NoteTypeId
+import com.ichi2.anki.progress.ViewModelProgress
 import com.ichi2.anki.progress.observeProgress
 import com.ichi2.anki.requireAnkiActivity
 import com.ichi2.anki.showError
@@ -74,6 +75,7 @@ import com.ichi2.anki.utils.ext.launchCollectionInLifecycleScope
 import com.ichi2.themes.Themes
 import com.ichi2.utils.LanguageUtil
 import com.ichi2.utils.boldList
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -101,6 +103,8 @@ import com.ichi2.anki.common.android.R as CommonR
 class ChangeNoteTypeDialog : AnalyticsDialogFragment(R.layout.dialog_change_note_type) {
     private val viewModel: ChangeNoteTypeViewModel by viewModels { defaultViewModelProviderFactory }
 
+    private var changeNoteTypeJob: Job? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, R.style.ThemeOverlay_AnkiDroid_AlertDialog_FullScreen)
@@ -119,7 +123,8 @@ class ChangeNoteTypeDialog : AnalyticsDialogFragment(R.layout.dialog_change_note
         binding.toolbar.title = TR.sentenceCase.changeNoteType
         binding.toolbar.setNavigationOnClickListener { dismiss() }
         binding.btnSave.setOnClickListener {
-            requireAnkiActivity().changeNoteType(viewModel)
+            if (isInputIgnored()) return@setOnClickListener
+            changeNoteTypeJob = requireAnkiActivity().changeNoteType(viewModel)
             // dismiss() is handled via closeDialogFlow
         }
 
@@ -145,6 +150,14 @@ class ChangeNoteTypeDialog : AnalyticsDialogFragment(R.layout.dialog_change_note
                 }
             }
         }
+    }
+
+    private fun isInputIgnored(): Boolean {
+        if (changeNoteTypeJob?.isActive != true && viewModel.progressManager.progress.value !is ViewModelProgress.Active) {
+            return false
+        }
+        Timber.i("Ignoring input while the note type is changing")
+        return true
     }
 
     private fun setupEdgeToEdge(binding: DialogChangeNoteTypeBinding) {
