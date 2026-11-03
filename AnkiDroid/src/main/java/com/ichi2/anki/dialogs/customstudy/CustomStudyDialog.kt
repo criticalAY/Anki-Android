@@ -25,6 +25,8 @@ import androidx.core.content.edit
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withResumed
@@ -280,6 +282,7 @@ class CustomStudyDialog :
                 override fun onStop() {
                     // Native dismissal happens before DialogFragment receives its queued callback.
                     initialization.cancel()
+                    parentFragmentManager.setCustomStudyMenuClosedResult(viewModel.deckId)
                     super.onStop()
                 }
             }
@@ -1035,6 +1038,16 @@ class CustomStudyDialog :
                     }
             }
 
+        fun Fragment.registerCustomStudyMenuClosedHandler(action: (deckId: DeckId) -> Unit) {
+            requireActivity().supportFragmentManager.setFragmentResultListener(REQUEST_MENU_CLOSED, viewLifecycleOwner) { _, bundle ->
+                action(bundle.getLong(RESULT_MENU_CLOSED_DECK_ID))
+            }
+        }
+
+        private fun FragmentManager.setCustomStudyMenuClosedResult(deckId: DeckId) {
+            setFragmentResult(REQUEST_MENU_CLOSED, Bundle().apply { putLong(RESULT_MENU_CLOSED_DECK_ID, deckId) })
+        }
+
         const val FORGOT_MAX_DAYS = 30
 
         /**
@@ -1042,5 +1055,8 @@ class CustomStudyDialog :
          * @see CustomStudyDialog.selectedSubDialog
          */
         private const val ARG_SUB_DIALOG_ID = "subDialogId"
+
+        private const val REQUEST_MENU_CLOSED = "request_custom_study_menu_closed"
+        private const val RESULT_MENU_CLOSED_DECK_ID = "result_custom_study_menu_closed_deck_id"
     }
 }
