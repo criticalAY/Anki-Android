@@ -1201,6 +1201,9 @@ class NoteEditorFragment :
         if (!collectionHasLoaded()) {
             return false
         }
+        if (multimediaController.isImportingMedia) {
+            return true
+        }
 
         fun fieldsEdited(): Boolean {
             // Editing an existing note: Check to see if the fields are changed

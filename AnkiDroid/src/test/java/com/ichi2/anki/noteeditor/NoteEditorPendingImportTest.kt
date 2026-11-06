@@ -4,6 +4,7 @@ package com.ichi2.anki.noteeditor
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ichi2.anki.CollectionManager
+import com.ichi2.anki.CollectionManager.TR
 import com.ichi2.anki.NoteEditorActivity
 import com.ichi2.anki.R
 import com.ichi2.anki.RobolectricTest
@@ -55,6 +56,40 @@ class NoteEditorPendingImportTest : RobolectricTest() {
 
             assertThat("the media import succeeded", col.media.have(field.mediaFile!!.name), equalTo(true))
             assertThat("the saved note includes the incoming audio", col.getNote(note.id).fields[1], containsString("[sound:"))
+        } finally {
+            gate.countDown()
+            CollectionManager.setTestDispatcher(previous)
+            dispatcher.close()
+        }
+    }
+
+    @Test
+    fun `back during a pending media import asks before discarding`() {
+        ensureCollectionLoadIsSynchronous()
+        val note = addBasicNote("Front", "Back")
+        val controller =
+            startActivityControllerNormallyOpenCollectionWithIntent(
+                NoteEditorActivity::class.java,
+                NoteEditorDestination.EditNoteFromPreviewer(note.firstCard().id).toIntent(targetContext),
+            )
+        val editor = controller.get().getNoteEditorFragment()
+        val audio = File.createTempFile("pending-audio", ".3gp", targetContext.cacheDir).apply { writeBytes(ByteArray(256)) }
+        val field =
+            AudioRecordingField().apply {
+                mediaFile = audio
+                hasTemporaryMedia = true
+            }
+        val executor = Executors.newSingleThreadExecutor()
+        val dispatcher = executor.asCoroutineDispatcher()
+        val gate = CountDownLatch(1)
+        executor.submit { check(gate.await(10, TimeUnit.SECONDS)) }
+        val previous = CollectionManager.setTestDispatcher(dispatcher, useReentrantLock = false)
+        try {
+            editor.multimediaController.handleResult(MultimediaResult.Success(1, field))
+            controller.get().onBackPressedDispatcher.onBackPressed()
+
+            assertThat("the editor stays open", controller.get().isFinishing, equalTo(false))
+            assertThat(getAlertDialogText(checkDismissed = true), equalTo(TR.cardTemplatesDiscardChanges()))
         } finally {
             gate.countDown()
             CollectionManager.setTestDispatcher(previous)

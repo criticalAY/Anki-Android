@@ -259,6 +259,9 @@ internal class NoteEditorMultimediaController(
         }
     }
 
+    val isImportingMedia: Boolean
+        get() = mediaImports.any { it.isActive }
+
     suspend fun awaitMediaImports() {
         val pendingImports = mediaImports.filter { it.isActive }
         if (pendingImports.isEmpty()) return
