@@ -160,6 +160,7 @@ class BottomNavigationScrollTest : RobolectricTest() {
             behavior.addOnScrollStateChangedListener { _, state -> states.add(state) }
             val touchOrigin = IntArray(2).also(activity.moreView::getLocationInWindow)[1] + activity.moreView.height / 3
             val start = SystemClock.uptimeMillis()
+            println("DIAG reversal start ${activity.diagLine()}")
 
             fun touch(
                 action: Int,
@@ -167,15 +168,17 @@ class BottomNavigationScrollTest : RobolectricTest() {
                 delta: Long,
             ) {
                 val event = MotionEvent.obtain(start, start + delta, action, 100f, touchOrigin + offset, 0)
-                activity.dispatchTouchEvent(event)
+                val handled = activity.dispatchTouchEvent(event)
                 event.recycle()
+                println("DIAG reversal action=$action offset=$offset handled=$handled before looper ${activity.diagLine()}")
                 advanceRobolectricLooper()
+                println("DIAG reversal action=$action offset=$offset after looper ${activity.diagLine()}")
             }
             // Keep the finger down throughout the reversal. Vertical coordinates are relative to More.
             touch(MotionEvent.ACTION_DOWN, 60f, 0)
             touch(MotionEvent.ACTION_MOVE, 130f, 100)
             touch(MotionEvent.ACTION_MOVE, 110f, 200)
-            assertThat("Reversing upwards must hide the bar", behavior.isScrolledOut, equalTo(true))
+            assertThat("Reversing upwards must hide the bar; ${activity.diagLine()}", behavior.isScrolledOut, equalTo(true))
             // Continue upwards while still below the initial touch position.
             states.clear()
             touch(MotionEvent.ACTION_MOVE, 90f, 300)
@@ -319,10 +322,13 @@ class BottomNavigationScrollTest : RobolectricTest() {
     private fun withBottomNavigation(test: (DeckPicker) -> Unit) =
         withPref(Prefs::devBottomNavEnabled, true) {
             setIntroductionSlidesShown(true)
+            println("DIAG test start ${dispatcherState()}")
             val controller = startActivityControllerNormallyOpenCollectionWithIntent(DeckPicker::class.java, Intent())
             test(controller.get())
+            println("DIAG test body done ${dispatcherState()}")
             controller.close()
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+            println("DIAG test closed ${dispatcherState()}")
         }
 
     private fun DeckPicker.scrollFrom(
@@ -366,6 +372,42 @@ class BottomNavigationScrollTest : RobolectricTest() {
         val scrollState = more.scrollState
         runBlocking { scrollState.scrollTo(position(scrollState)) }
         advanceRobolectricLooper()
+    }
+
+    private fun dispatcherState(): String =
+        runCatching {
+            val looper = shadowOf(Looper.getMainLooper())
+            val loop = "looperIdle=${looper.isIdle} next=${looper.nextScheduledTaskTime} uptime=${SystemClock.uptimeMillis()}"
+            val lazy =
+                androidx.compose.ui.platform.AndroidUiDispatcher::class.java
+                    .getDeclaredField("Main\$delegate")
+                    .apply { isAccessible = true }
+                    .get(null) as Lazy<*>
+            if (!lazy.isInitialized()) return@runCatching "main=uninitialized $loop"
+            val d = (lazy.value as kotlin.coroutines.CoroutineContext)[kotlin.coroutines.ContinuationInterceptor]!!
+
+            fun field(name: String) =
+                d.javaClass
+                    .getDeclaredField(name)
+                    .apply { isAccessible = true }
+                    .get(d)
+            val choreographer = field("choreographer") as android.view.Choreographer
+            val frameScheduled =
+                runCatching {
+                    android.view.Choreographer::class.java
+                        .getDeclaredField("mFrameScheduled")
+                        .apply { isAccessible = true }
+                        .get(choreographer)
+                }.getOrElse { "?" }
+            "trampoline=${field("scheduledTrampolineDispatch")} frame=${field("scheduledFrameDispatch")} " +
+                "queued=${(field("toRunTrampolined") as Collection<*>).size} onFrame=${(field("toRunOnFrame") as Collection<*>).size} " +
+                "sameChoreographer=${choreographer === android.view.Choreographer.getInstance()} choreographerFrameScheduled=$frameScheduled $loop"
+        }.getOrElse { "diag error: $it" }
+
+    private fun DeckPicker.diagLine(): String {
+        val nav = HideViewOnScrollBehavior.from(bottomNav)
+        return "scroll=${more.scrollState.value}/${more.scrollState.maxValue} inProgress=${more.scrollState.isScrollInProgress} " +
+            "out=${nav.isScrolledOut} ${dispatcherState()}"
     }
 
     private val DeckPicker.statisticsBinding: PageStatisticsBinding
