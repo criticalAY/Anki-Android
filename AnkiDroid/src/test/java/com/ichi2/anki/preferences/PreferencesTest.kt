@@ -23,8 +23,11 @@ import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -123,4 +126,58 @@ class PreferencesTest : RobolectricTest() {
             assertThat("rollover config should be set to new value", col.config.get("rollover") ?: 4, equalTo(2))
         }
     }
+
+    @Test
+    @Config(qualifiers = "w800dp-h1280dp")
+    fun `split settings use one pane when the window becomes compact`() {
+        val controller = settingsController()
+        RuntimeEnvironment.setQualifiers("sw360dp-w360dp-h780dp")
+        controller.recreate()
+        advanceRobolectricLooper()
+
+        val activity = controller.get()
+        assertFalse(activity.isSplit)
+        assertIs<GeneralSettingsFragment>(activity.settings.findFragmentById(R.id.settings_container))
+
+        activity.onBackPressedDispatcher.onBackPressed()
+        advanceRobolectricLooper()
+        assertIs<HeaderFragment>(activity.settings.findFragmentById(R.id.settings_container))
+        assertEquals(1, activity.settings.fragments.count { it is HeaderFragment })
+    }
+
+    @Test
+    @Config(qualifiers = "sw560dp-w560dp-h900dp")
+    fun `one pane settings stay one pane when the window becomes larger`() {
+        val controller = settingsController()
+        RuntimeEnvironment.setQualifiers("w800dp-h1280dp")
+        controller.recreate()
+        advanceRobolectricLooper()
+
+        val activity = controller.get()
+        assertFalse(activity.isSplit)
+        assertEquals(1, activity.settings.fragments.count { it is HeaderFragment })
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h1280dp")
+    fun `split settings stay split when a large window recreates them`() {
+        val controller = settingsController()
+        RuntimeEnvironment.setQualifiers("w1280dp-h800dp")
+        controller.recreate()
+        advanceRobolectricLooper()
+
+        val activity = controller.get()
+        assertTrue(activity.isSplit)
+        assertIs<HeaderFragment>(activity.settings.findFragmentById(R.id.lateral_nav_container))
+    }
+
+    private fun settingsController() =
+        startActivityControllerNormallyOpenCollectionWithIntent(
+            PreferencesActivity::class.java,
+            PreferencesActivity.getIntent(targetContext),
+        )
+
+    private val PreferencesActivity.isSplit get() = settings.findFragmentById(R.id.lateral_nav_container)?.isVisible == true
+
+    private val PreferencesActivity.settings get() = (fragment as PreferencesFragment).childFragmentManager
 }
