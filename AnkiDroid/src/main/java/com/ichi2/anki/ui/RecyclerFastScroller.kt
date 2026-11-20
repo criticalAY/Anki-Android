@@ -84,7 +84,7 @@ class RecyclerFastScroller
         internal val handle: View
         val hiddenTranslationX: Int
         private val hide: Runnable
-        private val minScrollHandleHeight: Int = 48.dp.toPx(context)
+        private val handleHeight: Int = 48.dp.toPx(context)
         var onHandleTouchListener: OnTouchListener? = null
 
         private var appBarLayoutOffset: Int = 0
@@ -168,7 +168,7 @@ class RecyclerFastScroller
 
         init {
 
-            layoutParams = LayoutParams(minScrollHandleHeight, LayoutParams.MATCH_PARENT)
+            layoutParams = LayoutParams(handleHeight, LayoutParams.MATCH_PARENT)
 
             bar = View(context)
             handle = View(context)
@@ -421,9 +421,9 @@ class RecyclerFastScroller
 
             val scrollOffset = recyclerView!!.computeVerticalScrollOffset() + appBarLayoutOffset
             // The content range and the visible viewport come from the RecyclerView itself.
-            // Sizing & positioning the handle against the viewport (rather than the track height)
-            // keeps it proportional even when the track is shortened to clear the navigation bar,
-            // so the handle reaches the bottom of the track exactly when the list reaches its end.
+            // Positioning the handle against the viewport (rather than the track height) holds
+            // even when the track is shortened to clear the navigation bar, so the handle reaches
+            // the bottom of the track exactly when the list reaches its end.
             val verticalScrollRange = recyclerView!!.computeVerticalScrollRange()
             val verticalScrollExtent = recyclerView!!.computeVerticalScrollExtent()
 
@@ -434,12 +434,7 @@ class RecyclerFastScroller
             val maxScrollOffset = (verticalScrollRange - verticalScrollExtent).coerceAtLeast(1)
             val ratio = (scrollOffset.toFloat() / maxScrollOffset).coerceIn(0f, 1f)
 
-            var calculatedHandleHeight = (trackHeight.toFloat() * verticalScrollExtent / verticalScrollRange).toInt()
-            if (calculatedHandleHeight < minScrollHandleHeight) {
-                calculatedHandleHeight = minScrollHandleHeight
-            }
-
-            if (calculatedHandleHeight >= trackHeight) {
+            if (verticalScrollExtent >= verticalScrollRange || handleHeight >= trackHeight) {
                 translationX = hiddenTranslationX.toFloat()
                 hideOverride = true
                 return
@@ -447,9 +442,9 @@ class RecyclerFastScroller
 
             hideOverride = false
 
-            val y = ratio * (trackHeight - calculatedHandleHeight)
+            val y = ratio * (trackHeight - handleHeight)
 
-            handle.layout(handle.left, y.toInt(), handle.right, y.toInt() + calculatedHandleHeight)
+            handle.layout(handle.left, y.toInt(), handle.right, y.toInt() + handleHeight)
 
             // The track is edge-to-edge (drawn under the navigation bar) while the bottom of the last
             // row is below the viewport. Once that bottom scrolls into view the track follows it

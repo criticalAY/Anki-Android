@@ -27,19 +27,22 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import kotlin.math.roundToInt
 
 @RunWith(AndroidJUnit4::class)
 @Config(application = EmptyApplication::class)
 @Category(EmptyApplicationCategory::class)
 class StableScrollbarLayoutManagerTest {
     @Test
-    fun `refresh resizes thumb when scroller attaches before adapter`() {
+    fun `refresh moves thumb when scroller attaches before adapter`() {
         val list = ScrollbarTestList(List(90) { 100 }, attachBeforeAdapter = true)
-        val expected = ScrollbarTestList(List(90) { 105 })
+        val expected = ScrollbarTestList(List(60) { 100 })
+        list.scrollBy(3000)
+        expected.scrollBy(3000)
 
-        list.refreshRows(List(90) { 105 })
+        list.refreshRows(List(60) { 100 })
 
-        assertThat("thumb retained the old range", list.thumb.height, equalTo(expected.thumb.height))
+        assertThat("thumb kept its old position", list.scrollerThumb.top.toDouble(), closeTo(expected.scrollerThumb.top.toDouble(), 2.0))
     }
 
     @Test
@@ -514,8 +517,18 @@ private class ScrollbarTestList(
         }
 
     val scrollRange: Int get() = recyclerView.computeVerticalScrollRange()
-    val thumb: View get() = scroller.handle
-    val trackHeight: Int get() = scroller.height - scroller.handleBottomInset
+    val scrollerThumb: View get() = scroller.handle
+    val trackHeight: Int get() = recyclerView.height - recyclerView.paddingTop - recyclerView.paddingBottom
+
+    val thumb: ScrollbarThumb
+        get() {
+            val range = recyclerView.computeVerticalScrollRange()
+            val extent = recyclerView.computeVerticalScrollExtent()
+            val height = (trackHeight.toFloat() * extent / range).roundToInt()
+            val travel = trackHeight - height
+            val top = (travel.toFloat() * recyclerView.computeVerticalScrollOffset() / (range - extent).coerceAtLeast(1)).roundToInt()
+            return ScrollbarThumb(top.coerceAtMost(travel), height)
+        }
 
     init {
         scroller.attachRecyclerView(recyclerView)
@@ -639,6 +652,13 @@ private class ScrollbarTestList(
         const val HEIGHT = 2000
         const val SCROLL_STEP = 50
     }
+}
+
+private data class ScrollbarThumb(
+    val top: Int,
+    val height: Int,
+) {
+    val bottom: Int get() = top + height
 }
 
 private class ScrollbarTestRowsAdapter(

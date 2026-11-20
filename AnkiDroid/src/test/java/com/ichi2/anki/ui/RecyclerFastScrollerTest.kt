@@ -4,6 +4,7 @@
 package com.ichi2.anki.ui
 
 import android.app.Activity
+import android.content.Context
 import android.os.Looper
 import android.os.SystemClock
 import android.view.MotionEvent
@@ -19,6 +20,7 @@ import com.ichi2.anki.EmptyApplicationCategory
 import com.ichi2.testutils.EmptyApplication
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.everyItem
 import org.junit.Test
 import org.junit.experimental.categories.Category
 import org.junit.runner.RunWith
@@ -56,6 +58,16 @@ class RecyclerFastScrollerTest {
 
         assertThat(list.isScrollerHidden, equalTo(true))
     }
+
+    @Test
+    fun `thumb keeps its size when taller rows come later`() {
+        val list = FastScrollerTestList(evenRows(20) + List(20) { 10 * ROW_HEIGHT }, ::StableScrollbarLayoutManager)
+        val initialSize = list.thumbHeight
+
+        val sizes = list.scrollToEndCollecting { list.thumbHeight }
+
+        assertThat(sizes, everyItem(equalTo(initialSize)))
+    }
 }
 
 private const val ROW_HEIGHT = 150
@@ -64,11 +76,12 @@ private fun evenRows(count: Int) = List(count) { ROW_HEIGHT }
 
 private class FastScrollerTestList(
     rowHeights: List<Int>,
+    layoutManager: (Context) -> RecyclerView.LayoutManager = ::LinearLayoutManager,
 ) {
     private val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     private val recyclerView =
         RecyclerView(activity).also {
-            it.layoutManager = LinearLayoutManager(activity)
+            it.layoutManager = layoutManager(activity)
             it.adapter = FixedHeightRowsAdapter(rowHeights)
         }
     private val scroller = RecyclerFastScroller(activity)
@@ -87,6 +100,8 @@ private class FastScrollerTestList(
 
     val isScrollerHidden: Boolean get() = scroller.translationX == scroller.hiddenTranslationX.toFloat()
 
+    val thumbHeight: Int get() = scroller.handle.height
+
     init {
         scroller.attachRecyclerView(recyclerView)
         activity.setContentView(root, ViewGroup.LayoutParams(WIDTH, HEIGHT))
@@ -104,6 +119,16 @@ private class FastScrollerTestList(
 
     fun waitPastAutoHide() = shadowOf(Looper.getMainLooper()).idleFor(AUTO_HIDE_WAIT)
 
+    fun <T> scrollToEndCollecting(value: () -> T): List<T> {
+        val values = mutableListOf<T>()
+        while (recyclerView.canScrollVertically(1)) {
+            recyclerView.scrollBy(0, SCROLL_STEP)
+            showNextFrame()
+            values.add(value())
+        }
+        return values
+    }
+
     private fun touch(
         action: Int,
         y: Float,
@@ -120,6 +145,7 @@ private class FastScrollerTestList(
     private companion object {
         const val WIDTH = 1000
         const val HEIGHT = 2000
+        const val SCROLL_STEP = 50
         val FRAME_INTERVAL: Duration = Duration.ofMillis(16)
         val AUTO_HIDE_WAIT: Duration = Duration.ofSeconds(2)
     }
