@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.Environment
 import androidx.annotation.CheckResult
 import androidx.core.content.edit
+import com.ichi2.anki.AnkiDroidApp
 import com.ichi2.anki.StoragePermissionSet
 import com.ichi2.anki.common.preferences.sharedPrefs
 import com.ichi2.anki.common.storage.AnkiDroidFolder
@@ -116,7 +117,6 @@ fun maybeSetDefaultCollectionPath(context: Context) {
  *                       Defaults to `"AnkiDroid"` (the historical default-profile folder name).
  *                       Callers wanting a profile-specific layout can pass e.g. the profile id.
  * @param folder  The storage location to return the default directory for.
- *                Defaults to [selectAnkiDroidFolder].
  * @return Absolute Path to the default location starting location for the AnkiDroid directory
  *
  * @throws SystemStorageException if `getExternalFilesDir` returns null
@@ -126,12 +126,21 @@ fun maybeSetDefaultCollectionPath(context: Context) {
 fun getDefaultAnkiDroidDirectory(
     context: Context,
     directoryName: String = "AnkiDroid",
-    folder: AnkiDroidFolder = selectAnkiDroidFolder(context),
+    folder: AnkiDroidFolder,
 ): File =
     when (folder) {
         AnkiDroidFolder.PUBLIC -> legacyAnkiDroidDirectory(directoryName)
         AnkiDroidFolder.APP_PRIVATE -> File(getAppSpecificExternalAnkiDroidDirectory(context), directoryName)
     }
+
+@CheckResult
+fun getDefaultAnkiDroidDirectory(context: Context): File {
+    val profileId = (context.applicationContext as? AnkiDroidApp)?.profileManager?.activeProfileContext?.profileId
+    if (profileId == null || profileId.isDefault()) {
+        return getDefaultAnkiDroidDirectory(context, folder = selectAnkiDroidFolder(context))
+    }
+    return getDefaultAnkiDroidDirectory(context, directoryName = profileId.value, folder = AnkiDroidFolder.APP_PRIVATE)
+}
 
 /**
  * Returns the absolute path to the AnkiDroid directory under the primary/shared external storage directory.
